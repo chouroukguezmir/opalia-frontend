@@ -1,0 +1,14 @@
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+  background: #f0f4f8;
+}
+
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.main-content.with-sidebar {
+  margin-left: 260px;
+}

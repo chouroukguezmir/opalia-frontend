@@ -1,0 +1,185 @@
+<div class="app-layout">
+  <app-sidebar></app-sidebar>
+
+  <main class="main-content">
+
+    <!-- Header -->
+    <div class="page-header">
+      <div>
+        <h1>Gestion des Employés</h1>
+        <p>Fiches employés extraites automatiquement par IA</p>
+      </div>
+      <div class="header-count" *ngIf="!isLoading">
+        👥 {{ employees.length }} employé(s)
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div class="filters-bar">
+      <div class="search-wrapper">
+        <span class="search-icon">🔍</span>
+        <input
+          type="text"
+          placeholder="Rechercher par nom, ID, département, poste..."
+          [(ngModel)]="searchQuery"
+          (ngModelChange)="onSearch()"
+          class="search-input"
+        />
+      </div>
+      <div class="results-count">
+        {{ filteredEmployees.length }} résultat(s)
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-state" *ngIf="isLoading">
+      <div class="loader"></div>
+      <p>Chargement des employés...</p>
+    </div>
+
+    <!-- Empty -->
+    <div class="empty-state" *ngIf="!isLoading && filteredEmployees.length === 0">
+      <div class="empty-icon">👥</div>
+      <h3>Aucun employé trouvé</h3>
+      <p>Les fiches employés sont créées automatiquement lors du scan</p>
+      <a routerLink="/scan" class="empty-btn">📤 Scanner un document</a>
+    </div>
+
+    <!-- Cards Grid -->
+    <div class="employees-grid" *ngIf="!isLoading && filteredEmployees.length > 0">
+      <div
+        class="employee-card"
+        *ngFor="let emp of filteredEmployees"
+        (click)="openDetail(emp)">
+
+        <div class="card-top">
+          <div class="emp-avatar"
+            [style.background]="getAvatarColor(emp.fullName)">
+            {{ getInitials(emp.fullName) }}
+          </div>
+          <div class="emp-info">
+            <h3>{{ emp.fullName || '—' }}</h3>
+            <p class="emp-position">{{ emp.position || '—' }}</p>
+          </div>
+        </div>
+
+        <div class="card-details">
+          <div class="card-detail-item">
+            <span class="detail-icon">🏢</span>
+            <span>{{ emp.department || '—' }}</span>
+          </div>
+          <div class="card-detail-item">
+            <span class="detail-icon">🆔</span>
+            <span>{{ emp.employeeId || '—' }}</span>
+          </div>
+          <div class="card-detail-item" *ngIf="emp.email">
+            <span class="detail-icon">📧</span>
+            <span class="email-text">{{ emp.email }}</span>
+          </div>
+          <div class="card-detail-item" *ngIf="emp.phone">
+            <span class="detail-icon">📞</span>
+            <span>{{ emp.phone }}</span>
+          </div>
+        </div>
+
+        <div class="card-footer-row">
+          <span class="view-detail">Voir détails →</span>
+          <span class="card-date" *ngIf="emp.createdAt">
+            {{ emp.createdAt | date:'dd/MM/yyyy' }}
+          </span>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Detail Modal -->
+    <div class="modal-overlay" *ngIf="selectedEmployee" (click)="closeDetail()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+
+        <div class="modal-header">
+          <div class="modal-emp-header">
+            <div class="modal-avatar"
+              [style.background]="getAvatarColor(selectedEmployee.fullName)">
+              {{ getInitials(selectedEmployee.fullName) }}
+            </div>
+            <div>
+              <h2>{{ selectedEmployee.fullName || '—' }}</h2>
+              <p>{{ selectedEmployee.position || '—' }}</p>
+            </div>
+          </div>
+          <button class="close-btn" (click)="closeDetail()">✕</button>
+        </div>
+
+        <div class="modal-body">
+
+          <div class="detail-section">
+            <h3>Informations Professionnelles</h3>
+            <div class="detail-grid">
+              <div class="detail-item">
+                <label>ID Employé</label>
+                <p>{{ selectedEmployee.employeeId || '—' }}</p>
+              </div>
+              <div class="detail-item">
+                <label>Département</label>
+                <p>{{ selectedEmployee.department || '—' }}</p>
+              </div>
+              <div class="detail-item">
+                <label>Poste</label>
+                <p>{{ selectedEmployee.position || '—' }}</p>
+              </div>
+              <div class="detail-item">
+                <label>Site</label>
+                <p>{{ selectedEmployee.site || '—' }}</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-section">
+            <h3>Coordonnées</h3>
+            <div class="detail-grid">
+              <div class="detail-item">
+                <label>Email</label>
+                <p>{{ selectedEmployee.email || '—' }}</p>
+              </div>
+              <div class="detail-item">
+                <label>Téléphone</label>
+                <p>{{ selectedEmployee.phone || '—' }}</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-section" *ngIf="selectedEmployee.vpnEntries?.length > 0">
+            <h3>Accès VPN</h3>
+            <div class="vpn-list">
+              <div class="vpn-item" *ngFor="let vpn of selectedEmployee.vpnEntries">
+                <span>🔐</span>
+                <span>{{ vpn.application }} — {{ vpn.profile }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-section">
+            <h3>Métadonnées</h3>
+            <div class="detail-grid">
+              <div class="detail-item">
+                <label>Document source</label>
+                <p>{{ selectedEmployee.sourceDocumentId || '—' }}</p>
+              </div>
+              <div class="detail-item">
+                <label>Créé le</label>
+                <p>{{ selectedEmployee.createdAt | date:'dd/MM/yyyy HH:mm' }}</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="modal-footer">
+          <button class="close-modal-btn" (click)="closeDetail()">Fermer</button>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+</div>

@@ -1,0 +1,264 @@
+<div class="app-layout">
+  <app-sidebar></app-sidebar>
+
+  <main class="main-content">
+
+    <!-- Header -->
+    <div class="page-header">
+      <div>
+        <h1>Documents Administratifs</h1>
+        <p>Gestion et consultation des documents scannés</p>
+      </div>
+      <a routerLink="/scan" class="scan-btn">
+        📤 Scanner un document
+      </a>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-bar">
+      <div class="search-wrapper">
+        <span class="search-icon">🔍</span>
+        <input
+          type="text"
+          placeholder="Rechercher par nom, matricule, société..."
+          [(ngModel)]="searchQuery"
+          (ngModelChange)="onSearch()"
+          class="search-input"
+        />
+      </div>
+      <select
+        [(ngModel)]="selectedType"
+        (ngModelChange)="onTypeChange()"
+        class="type-select">
+        <option *ngFor="let t of types" [value]="t.value">
+          {{ t.label }}
+        </option>
+      </select>
+      <div class="results-count">
+        {{ filteredDocuments.length }} résultat(s)
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-state" *ngIf="isLoading">
+      <div class="loader"></div>
+      <p>Chargement des documents...</p>
+    </div>
+
+    <!-- Empty -->
+    <div class="empty-state" *ngIf="!isLoading && filteredDocuments.length === 0">
+      <div class="empty-icon">📭</div>
+      <h3>Aucun document trouvé</h3>
+      <p>Essayez de modifier vos filtres ou scannez un nouveau document</p>
+      <a routerLink="/scan" class="empty-btn">📤 Scanner maintenant</a>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrapper" *ngIf="!isLoading && filteredDocuments.length > 0">
+      <table class="doc-table">
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Nom / Prénom</th>
+            <th>Matricule</th>
+            <th>Société</th>
+            <th>Direction</th>
+            <th>Statut</th>
+            <th>Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let doc of filteredDocuments" (click)="openDetail(doc)">
+            <td>
+              <span class="type-badge" [ngClass]="getTypeBadgeClass(doc.subType)">
+                {{ getTypeLabel(doc.subType) }}
+              </span>
+            </td>
+            <td class="name-cell">
+              <div class="name-avatar">
+                {{ (doc.nom || '?').charAt(0).toUpperCase() }}
+              </div>
+              <div>
+                <p class="name-text">{{ doc.nom || '—' }} {{ doc.prenom || '' }}</p>
+              </div>
+            </td>
+            <td>{{ doc.matricule || '—' }}</td>
+            <td>{{ doc.societe || '—' }}</td>
+            <td>{{ doc.direction || '—' }}</td>
+            <td>
+              <span class="status-badge" [ngClass]="getStatusClass(doc.status)">
+                {{ doc.status || '—' }}
+              </span>
+            </td>
+            <td>{{ doc.createdAt | date:'dd/MM/yyyy' }}</td>
+            <td>
+              <button class="detail-btn" (click)="openDetail(doc); $event.stopPropagation()">
+                👁 Voir
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Detail Modal -->
+    <div class="modal-overlay" *ngIf="selectedDoc" (click)="closeDetail()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div>
+            <h2>Détail du Document</h2>
+            <span class="type-badge" [ngClass]="getTypeBadgeClass(selectedDoc.subType)">
+              {{ getTypeLabel(selectedDoc.subType) }}
+            </span>
+          </div>
+          <button class="close-btn" (click)="closeDetail()">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="detail-section">
+            <h3>Informations Personnelles</h3>
+            <div class="detail-grid">
+              <div class="detail-item">
+                <label>Nom</label>
+                <p>{{ selectedDoc.nom || '—' }}</p>
+              </div>
+              <div class="detail-item">
+                <label>Prénom</label>
+                <p>{{ selectedDoc.prenom || '—' }}</p>
+              </div>
+              <div class="detail-item">
+                <label>Matricule</label>
+                <p>{{ selectedDoc.matricule || '—' }}</p>
+              </div>
+              <div class="detail-item">
+                <label>Fonction</label>
+                <p>{{ selectedDoc.fonction || '—' }}</p>
+              </div>
+              <div class="detail-item">
+                <label>Société</label>
+                <p>{{ selectedDoc.societe || '—' }}</p>
+              </div>
+              <div class="detail-item">
+                <label>Direction</label>
+                <p>{{ selectedDoc.direction || '—' }}</p>
+              </div>
+              <div class="detail-item">
+                <label>Site</label>
+                <p>{{ selectedDoc.site || '—' }}</p>
+              </div>
+              <div class="detail-item">
+                <label>Statut</label>
+                <span class="status-badge" [ngClass]="getStatusClass(selectedDoc.status)">
+                  {{ selectedDoc.status }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- TYPE_A -->
+          <div class="detail-section" *ngIf="selectedDoc.subType === 'TYPE_A'">
+            <h3>Droits d'Accès Informatique</h3>
+            <div class="detail-grid">
+              <div class="detail-item">
+                <label>Classification</label>
+                <p>{{ selectedDoc.classification || '—' }}</p>
+              </div>
+              <div class="detail-item">
+                <label>Demandeur</label>
+                <p>{{ selectedDoc.demandeur || '—' }}</p>
+              </div>
+              <div class="detail-item">
+                <label>Responsable Dossier</label>
+                <p>{{ selectedDoc.responsableDossier || '—' }}</p>
+              </div>
+              <div class="detail-item">
+                <label>RSSI</label>
+                <p>{{ selectedDoc.rssi || '—' }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- TYPE_B -->
+          <div class="detail-section" *ngIf="selectedDoc.subType === 'TYPE_B'">
+            <h3>Matériels Informatiques</h3>
+            <div class="detail-grid">
+              <div class="detail-item">
+                <label>N° Ticket</label>
+                <p>{{ selectedDoc.numeroTicket || '—' }}</p>
+              </div>
+              <div class="detail-item">
+                <label>Remarque</label>
+                <p>{{ selectedDoc.remarque || '—' }}</p>
+              </div>
+            </div>
+            <div class="checkbox-list">
+              <div class="checkbox-item" [class.checked]="selectedDoc.ordinateurDesktop">
+                💻 Ordinateur Desktop
+              </div>
+              <div class="checkbox-item" [class.checked]="selectedDoc.ordinateurLaptop">
+                💻 Ordinateur Laptop
+              </div>
+              <div class="checkbox-item" [class.checked]="selectedDoc.telephoneSmartphone">
+                📱 Smartphone
+              </div>
+              <div class="checkbox-item" [class.checked]="selectedDoc.internetCleInternet">
+                🔑 Clé Internet
+              </div>
+            </div>
+          </div>
+
+          <!-- TYPE_C -->
+          <div class="detail-section" *ngIf="selectedDoc.subType === 'TYPE_C'">
+            <h3>Matériel Externe</h3>
+            <div class="detail-grid">
+              <div class="detail-item">
+                <label>Type Personne</label>
+                <p>{{ selectedDoc.typePersonne || '—' }}</p>
+              </div>
+              <div class="detail-item">
+                <label>Raison Autorisation</label>
+                <p>{{ selectedDoc.raisonAutorisation || '—' }}</p>
+              </div>
+              <div class="detail-item">
+                <label>Durée</label>
+                <p>{{ selectedDoc.dureeFrom || '—' }} → {{ selectedDoc.dureeTo || '—' }}</p>
+              </div>
+              <div class="detail-item">
+                <label>Encadreur Opalia</label>
+                <p>{{ selectedDoc.encadreurOpalia || '—' }}</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-section">
+            <h3>Métadonnées</h3>
+            <div class="detail-grid">
+              <div class="detail-item">
+                <label>Manuscrit</label>
+                <p>{{ selectedDoc.isHandwritten ? 'Oui' : 'Non' }}</p>
+              </div>
+              <div class="detail-item">
+                <label>Confiance IA</label>
+                <p>{{ ((selectedDoc.confidence || 0) * 100).toFixed(0) }}%</p>
+              </div>
+              <div class="detail-item">
+                <label>Analysé le</label>
+                <p>{{ selectedDoc.analyzedAt | date:'dd/MM/yyyy HH:mm' }}</p>
+              </div>
+              <div class="detail-item">
+                <label>Créé le</label>
+                <p>{{ selectedDoc.createdAt | date:'dd/MM/yyyy HH:mm' }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="close-modal-btn" (click)="closeDetail()">Fermer</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>

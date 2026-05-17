@@ -1,0 +1,178 @@
+<div class="app-layout">
+  <app-sidebar></app-sidebar>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1>Scanner un Document</h1>
+        <p>Upload, analyse OCR et reconnaissance de l'écriture manuscrite</p>
+      </div>
+    </div>
+
+    <div class="scan-layout">
+
+      <!-- Zone d'upload -->
+      <div class="upload-section">
+        <div class="drop-zone"
+             [class.dragging]="isDragging"
+             [class.has-file]="selectedFile"
+             (dragover)="onDragOver($event)"
+             (dragleave)="onDragLeave()"
+             (drop)="onDrop($event)"
+             *ngIf="!isUploading && !result">
+
+          <div class="drop-content" *ngIf="!selectedFile">
+            <div class="drop-icon">📂</div>
+            <h3>Glissez votre document ici</h3>
+            <p>ou cliquez pour sélectionner</p>
+            <label class="file-picker-btn">
+              <input type="file" hidden
+                     accept=".pdf,.png,.jpg,.jpeg,.docx"
+                     (change)="onFileSelected($event)"/>
+              Choisir un fichier
+            </label>
+            <div class="accepted-formats">
+              <span>PDF</span><span>PNG</span><span>JPG</span><span>DOCX</span>
+            </div>
+            <p class="size-limit">Max 10 MB</p>
+          </div>
+
+          <div class="file-selected" *ngIf="selectedFile">
+            <div class="image-preview" *ngIf="previewUrl">
+              <img [src]="previewUrl" alt="Aperçu"/>
+            </div>
+            <div class="file-info">
+              <div class="file-icon-big">{{ getFileIcon() }}</div>
+              <div class="file-details">
+                <p class="file-name">{{ selectedFile.name }}</p>
+                <p class="file-size">{{ getFileSizeMB() }} MB</p>
+              </div>
+              <button class="remove-file" (click)="resetScan()">✕</button>
+            </div>
+            <button class="upload-btn" (click)="onUpload()">
+              🚀 Lancer l'analyse
+            </button>
+          </div>
+        </div>
+
+        <!-- Progression -->
+        <div class="progress-section" *ngIf="isUploading">
+          <div class="progress-icon">🔄</div>
+          <h3>Analyse en cours...</h3>
+          <div class="steps">
+            <div class="step" [class.active]="uploadProgress > 10">
+              <span>📤</span> Upload du fichier
+            </div>
+            <div class="step" [class.active]="uploadProgress > 30">
+              <span>🔍</span> OCR — extraction texte
+            </div>
+            <div class="step" [class.active]="uploadProgress > 55">
+              <span>✍️</span> Détection manuscrit
+            </div>
+            <div class="step" [class.active]="uploadProgress > 75">
+              <span>🤖</span> Classification IA
+            </div>
+            <div class="step" [class.active]="uploadProgress > 88">
+              <span>📑</span> Génération PDF
+            </div>
+          </div>
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill"
+                 [style.width.%]="uploadProgress"></div>
+          </div>
+          <p class="progress-percent">{{ uploadProgress.toFixed(0) }}%</p>
+        </div>
+
+        <!-- Erreur -->
+        <div class="error-box" *ngIf="errorMessage">
+          <span>⚠️</span>
+          {{ errorMessage }}
+          <button (click)="errorMessage = ''">✕</button>
+        </div>
+      </div>
+
+      <!-- Résultat -->
+      <div class="result-section">
+        <div class="result-placeholder" *ngIf="!result && !isUploading">
+          <div class="placeholder-icon">🤖</div>
+          <h3>Résultat de l'analyse</h3>
+          <p>Le résultat apparaîtra ici après le scan</p>
+          <div class="pipeline-info">
+            <div class="pipeline-step">
+              <span class="step-num">1</span> OCR extrait le texte
+            </div>
+            <div class="pipeline-arrow">↓</div>
+            <div class="pipeline-step">
+              <span class="step-num">2</span> Détecte si manuscrit
+            </div>
+            <div class="pipeline-arrow">↓</div>
+            <div class="pipeline-step">
+              <span class="step-num">3</span>
+              Manuscrit → digitise + PDF propre
+            </div>
+            <div class="pipeline-arrow">↓</div>
+            <div class="pipeline-step">
+              <span class="step-num">4</span> Admin confirme → archivé
+            </div>
+          </div>
+        </div>
+
+        <div class="result-card" *ngIf="result">
+          <div class="result-header">
+            <span class="result-status" [ngClass]="getStatusClass(result.status)">
+              ⏳ {{ getStatusLabel(result.status) }}
+            </span>
+          </div>
+
+          <div class="result-type">
+            <div class="type-icon-big">{{ getDocTypeIcon(result.documentType) }}</div>
+            <div>
+              <p class="type-label">Type détecté</p>
+              <h3>{{ getDocTypeLabel(result.documentType) }}</h3>
+            </div>
+          </div>
+
+          <!-- Bandeau manuscrit -->
+          <div class="handwriting-badge" *ngIf="result.isHandwritten">
+            <span>✍️</span>
+            Document manuscrit détecté — PDF digitalisé généré
+          </div>
+
+          <div class="result-meta-grid">
+            <div class="result-detail-item">
+              <label>Fichier</label>
+              <p>{{ result.fileOriginalName }}</p>
+            </div>
+            <div class="result-detail-item">
+              <label>Scanné par</label>
+              <p>{{ result.scannedBy }}</p>
+            </div>
+            <div class="result-detail-item">
+              <label>Manuscrit</label>
+              <p>{{ result.isHandwritten ? 'Oui ✍️' : 'Non 🖨️' }}</p>
+            </div>
+            <div class="result-detail-item">
+              <label>Statut</label>
+              <p>En attente de confirmation</p>
+            </div>
+          </div>
+
+          <div class="result-info-box">
+            <span>ℹ️</span>
+            <p>Le document est en attente de confirmation. Rendez-vous dans
+              <strong>Documents en attente</strong> pour le valider et l'archiver.</p>
+          </div>
+
+          <div class="result-actions">
+            <button class="new-scan-btn" (click)="resetScan()">
+              📤 Nouveau scan
+            </button>
+            <a routerLink="/pending" class="view-docs-btn">
+              📋 Voir les documents en attente
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>

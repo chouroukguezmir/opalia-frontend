@@ -1,0 +1,136 @@
+<div class="app-layout">
+  <app-sidebar></app-sidebar>
+
+  <main class="main-content">
+
+    <div class="page-header">
+      <div>
+        <h1>Documents en Attente</h1>
+        <p>Confirmez ou rejetez chaque document avant archivage</p>
+      </div>
+      <div class="header-count" *ngIf="!isLoading">
+        ⏳ {{ pendingDocs.length }} en attente
+      </div>
+    </div>
+
+    <!-- Messages -->
+    <div class="success-bar" *ngIf="successMessage">✅ {{ successMessage }}</div>
+    <div class="error-bar"   *ngIf="errorMessage">⚠️ {{ errorMessage }}</div>
+
+    <!-- Loading -->
+    <div class="loading-state" *ngIf="isLoading">
+      <div class="loader"></div>
+      <p>Chargement...</p>
+    </div>
+
+    <!-- Vide -->
+    <div class="empty-state" *ngIf="!isLoading && pendingDocs.length === 0">
+      <div class="empty-icon">📭</div>
+      <h3>Aucun document en attente</h3>
+      <p>Tous les documents ont été traités</p>
+      <a routerLink="/scan" class="empty-btn">📤 Scanner un document</a>
+    </div>
+
+    <!-- Liste -->
+    <div class="pending-grid" *ngIf="!isLoading && pendingDocs.length > 0">
+      <div class="pending-card" *ngFor="let doc of pendingDocs">
+
+        <div class="card-top">
+          <div class="doc-type-icon">{{ getDocTypeIcon(doc.documentType) }}</div>
+          <div class="doc-type-info">
+            <h3>{{ getDocTypeLabel(doc.documentType) }}</h3>
+            <p class="doc-date">{{ doc.scannedAt | date:'dd/MM/yyyy HH:mm' }}</p>
+          </div>
+        </div>
+
+        <!-- Badge manuscrit -->
+        <div class="hw-badge" [ngClass]="getHwClass(doc.handwritingQuality)"
+             *ngIf="doc.handwritten">
+          ✍️ Manuscrit — {{ getHwLabel(doc.handwritingQuality) }}
+        </div>
+        <div class="scan-badge" *ngIf="!doc.handwritten">
+          🖨️ Document imprimé / numérique
+        </div>
+
+        <!-- Champs extraits -->
+        <div class="extracted-preview" *ngIf="doc.extractedFields">
+          <div class="field-row"
+               *ngFor="let key of getTopFields(doc.extractedFields) | slice:0:4">
+            <span class="field-key">{{ key }}</span>
+            <span class="field-val">{{ doc.extractedFields[key] }}</span>
+          </div>
+        </div>
+
+        <div class="card-meta">
+          <span>Scanné par : {{ doc.scannedBy }}</span>
+        </div>
+
+        <div class="card-actions">
+          <button class="preview-btn" (click)="openPreview(doc)">
+            👁 Voir le PDF
+          </button>
+          <button class="confirm-btn" (click)="confirmDoc(doc)"
+                  [disabled]="actionLoading">
+            ✅ Confirmer
+          </button>
+          <button class="reject-btn" (click)="rejectDoc(doc)"
+                  [disabled]="actionLoading">
+            ✕ Rejeter
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal PDF Preview -->
+    <div class="modal-overlay" *ngIf="showPdfPreview" (click)="closePreview()">
+      <div class="modal-card pdf-modal" (click)="$event.stopPropagation()">
+
+        <div class="modal-header">
+          <div>
+            <h2>{{ getDocTypeIcon(selectedDoc?.documentType) }}
+                {{ getDocTypeLabel(selectedDoc?.documentType) }}</h2>
+            <div class="hw-badge sm" *ngIf="selectedDoc?.handwritten"
+                 [ngClass]="getHwClass(selectedDoc?.handwritingQuality)">
+              ✍️ Manuscrit — {{ getHwLabel(selectedDoc?.handwritingQuality) }}
+            </div>
+          </div>
+          <button class="close-btn" (click)="closePreview()">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="pdf-frame">
+            <iframe [src]="pdfPreviewUrl"
+                    width="100%" height="100%"
+                    frameborder="0"
+                    title="Aperçu PDF">
+            </iframe>
+          </div>
+
+          <div class="fields-panel" *ngIf="selectedDoc?.extractedFields">
+            <h4>Données extraites</h4>
+            <div class="fields-list">
+              <div class="field-row"
+                   *ngFor="let key of getTopFields(selectedDoc.extractedFields)">
+                <span class="field-key">{{ key }}</span>
+                <span class="field-val">{{ selectedDoc.extractedFields[key] }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="reject-btn lg" (click)="rejectDoc(selectedDoc)"
+                  [disabled]="actionLoading">
+            ✕ Rejeter
+          </button>
+          <button class="confirm-btn lg" (click)="confirmDoc(selectedDoc)"
+                  [disabled]="actionLoading">
+            <span *ngIf="!actionLoading">✅ Confirmer et archiver</span>
+            <span *ngIf="actionLoading">En cours...</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>

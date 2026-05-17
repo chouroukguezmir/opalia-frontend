@@ -1,1 +1,30 @@
-/* You can add global styles to this file, and also import other style files */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Inter, sans-serif;
+  background-color: #f0fdfa;
+  color: #1e293b;
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #f1f5f9; }
+::-webkit-scrollbar-thumb { background: #0d9488; border-radius: 3px; }
+
+:root {
+  --primary:     #0d9488;
+  --primary-dark:#0f766e;
+  --primary-light:#ccfbf1;
+  --white:       #ffffff;
+  --gray-50:     #f8fafc;
+  --gray-100:    #f1f5f9;
+  --gray-200:    #e2e8f0;
+  --gray-500:    #64748b;
+  --gray-700:    #334155;
+  --danger:      #ef4444;
+  --success:     #22c55e;
+  --warning:     #f59e0b;
+}
