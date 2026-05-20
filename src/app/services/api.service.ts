@@ -60,9 +60,14 @@ export class ApiService {
       {}, { headers: this.getHeaders() });
   }
 
-  getPdfPreviewUrl(pendingId: string): string {
-    const token = localStorage.getItem('token');
-    return `${this.baseUrl}/pending/${pendingId}/pdf`;
+  updatePendingFields(pendingId: string, fields: any): Observable<any> {
+    return this.http.put(`${this.baseUrl}/pending/${pendingId}`,
+      fields, { headers: this.getHeaders() });
+  }
+
+  getPendingFile(pendingId: string): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/pending/${pendingId}/file`,
+      { headers: this.getFileHeaders(), responseType: 'blob' });
   }
 
   // ── Documents archivés ────────────────────────────────────
@@ -75,5 +80,10 @@ export class ApiService {
   getAllEmployees(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/employees`,
       { headers: this.getHeaders() });
+  }
+
+  getEmployeeFile(id: string): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/employees/${id}/file`,
+      { headers: this.getFileHeaders(), responseType: 'blob' });
   }
 }

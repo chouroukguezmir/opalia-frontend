@@ -20,7 +20,7 @@
         <span class="search-icon">🔍</span>
         <input
           type="text"
-          placeholder="Rechercher par nom, ID, département, poste..."
+          placeholder="Rechercher par nom, société, département, site..."
           [(ngModel)]="searchQuery"
           (ngModelChange)="onSearch()"
           class="search-input"
@@ -54,31 +54,31 @@
 
         <div class="card-top">
           <div class="emp-avatar"
-            [style.background]="getAvatarColor(emp.fullName)">
-            {{ getInitials(emp.fullName) }}
+            [style.background]="getAvatarColor(emp.name)">
+            {{ getInitials(emp.name) }}
           </div>
           <div class="emp-info">
-            <h3>{{ emp.fullName || '—' }}</h3>
-            <p class="emp-position">{{ emp.position || '—' }}</p>
+            <h3>{{ emp.name || '—' }}</h3>
+            <p class="emp-position">{{ emp.kindOfUpdate || '—' }}</p>
           </div>
         </div>
 
         <div class="card-details">
           <div class="card-detail-item">
             <span class="detail-icon">🏢</span>
-            <span>{{ emp.department || '—' }}</span>
+            <span>{{ emp.company || '—' }}</span>
           </div>
           <div class="card-detail-item">
-            <span class="detail-icon">🆔</span>
-            <span>{{ emp.employeeId || '—' }}</span>
+            <span class="detail-icon">🗂️</span>
+            <span>{{ emp.department || '—' }}</span>
           </div>
-          <div class="card-detail-item" *ngIf="emp.email">
-            <span class="detail-icon">📧</span>
-            <span class="email-text">{{ emp.email }}</span>
+          <div class="card-detail-item" *ngIf="emp.site">
+            <span class="detail-icon">📍</span>
+            <span>{{ emp.site }}</span>
           </div>
-          <div class="card-detail-item" *ngIf="emp.phone">
-            <span class="detail-icon">📞</span>
-            <span>{{ emp.phone }}</span>
+          <div class="card-detail-item" *ngIf="emp.mobile">
+            <span class="detail-icon">📱</span>
+            <span>{{ emp.mobile }}</span>
           </div>
         </div>
 
@@ -99,12 +99,12 @@
         <div class="modal-header">
           <div class="modal-emp-header">
             <div class="modal-avatar"
-              [style.background]="getAvatarColor(selectedEmployee.fullName)">
-              {{ getInitials(selectedEmployee.fullName) }}
+              [style.background]="getAvatarColor(selectedEmployee.name)">
+              {{ getInitials(selectedEmployee.name) }}
             </div>
             <div>
-              <h2>{{ selectedEmployee.fullName || '—' }}</h2>
-              <p>{{ selectedEmployee.position || '—' }}</p>
+              <h2>{{ selectedEmployee.name || '—' }}</h2>
+              <p>{{ selectedEmployee.kindOfUpdate || '—' }}</p>
             </div>
           </div>
           <button class="close-btn" (click)="closeDetail()">✕</button>
@@ -113,23 +113,23 @@
         <div class="modal-body">
 
           <div class="detail-section">
-            <h3>Informations Professionnelles</h3>
+            <h3>Informations Employé</h3>
             <div class="detail-grid">
               <div class="detail-item">
-                <label>ID Employé</label>
-                <p>{{ selectedEmployee.employeeId || '—' }}</p>
+                <label>Société</label>
+                <p>{{ selectedEmployee.company || '—' }}</p>
+              </div>
+              <div class="detail-item">
+                <label>Site</label>
+                <p>{{ selectedEmployee.site || '—' }}</p>
               </div>
               <div class="detail-item">
                 <label>Département</label>
                 <p>{{ selectedEmployee.department || '—' }}</p>
               </div>
               <div class="detail-item">
-                <label>Poste</label>
-                <p>{{ selectedEmployee.position || '—' }}</p>
-              </div>
-              <div class="detail-item">
-                <label>Site</label>
-                <p>{{ selectedEmployee.site || '—' }}</p>
+                <label>Type de demande</label>
+                <p>{{ selectedEmployee.kindOfUpdate || '—' }}</p>
               </div>
             </div>
           </div>
@@ -138,24 +138,35 @@
             <h3>Coordonnées</h3>
             <div class="detail-grid">
               <div class="detail-item">
-                <label>Email</label>
-                <p>{{ selectedEmployee.email || '—' }}</p>
+                <label>Mobile</label>
+                <p>{{ selectedEmployee.mobile || '—' }}</p>
               </div>
               <div class="detail-item">
-                <label>Téléphone</label>
-                <p>{{ selectedEmployee.phone || '—' }}</p>
+                <label>Téléphone bureau</label>
+                <p>{{ selectedEmployee.officePhone || '—' }}</p>
               </div>
             </div>
           </div>
 
-          <div class="detail-section" *ngIf="selectedEmployee.vpnEntries?.length > 0">
-            <h3>Accès VPN</h3>
-            <div class="vpn-list">
-              <div class="vpn-item" *ngFor="let vpn of selectedEmployee.vpnEntries">
-                <span>🔐</span>
-                <span>{{ vpn.application }} — {{ vpn.profile }}</span>
+          <div class="detail-section">
+            <h3>Demandeur</h3>
+            <div class="detail-grid">
+              <div class="detail-item">
+                <label>Requester</label>
+                <p>{{ selectedEmployee.requester || '—' }}</p>
+              </div>
+              <div class="detail-item">
+                <label>Job Role du demandeur</label>
+                <p>{{ selectedEmployee.requesterJobRole || '—' }}</p>
               </div>
             </div>
+          </div>
+
+          <div class="detail-section" *ngIf="selectedEmployee.attachedFile">
+            <h3>Document joint</h3>
+            <button class="attached-file-btn" (click)="openAttachedFile(selectedEmployee)">
+              📎 Ouvrir le document d'origine
+            </button>
           </div>
 
           <div class="detail-section">

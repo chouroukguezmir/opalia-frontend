@@ -47,11 +47,10 @@ export class EmployeesComponent implements OnInit {
       return;
     }
     this.filteredEmployees = this.employees.filter(e =>
-      e.fullName?.toLowerCase().includes(q) ||
-      e.employeeId?.toLowerCase().includes(q) ||
+      e.name?.toLowerCase().includes(q) ||
+      e.company?.toLowerCase().includes(q) ||
       e.department?.toLowerCase().includes(q) ||
-      e.email?.toLowerCase().includes(q) ||
-      e.position?.toLowerCase().includes(q)
+      e.site?.toLowerCase().includes(q)
     );
   }
 
@@ -61,6 +60,13 @@ export class EmployeesComponent implements OnInit {
 
   closeDetail(): void {
     this.selectedEmployee = null;
+  }
+
+  openAttachedFile(emp: any): void {
+    this.apiService.getEmployeeFile(emp.id).subscribe({
+      next: (blob) => window.open(URL.createObjectURL(blob), '_blank'),
+      error: () => alert('Document joint introuvable')
+    });
   }
 
   getInitials(name: string): string {

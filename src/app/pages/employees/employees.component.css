@@ -403,3 +403,18 @@
   .main-content { margin-left: 0; padding: 1rem; }
   .employees-grid { grid-template-columns: 1fr; }
 }
+
+.attached-file-btn {
+  padding: 0.6rem 1.1rem;
+  border: 1px solid #0d9488;
+  border-radius: 8px;
+  background: #f0fdfa;
+  color: #0d9488;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.attached-file-btn:hover {
+  background: #ccfbf1;
+}
