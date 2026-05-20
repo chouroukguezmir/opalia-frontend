@@ -1,0 +1,201 @@
+<div class="app-layout">
+  <app-sidebar></app-sidebar>
+
+  <main class="main-content">
+
+    <!-- Header -->
+    <div class="page-header">
+      <div>
+        <h1>Gestion des Matériels</h1>
+        <p>Demandes de matériel informatique extraites automatiquement</p>
+      </div>
+      <div class="header-count" *ngIf="!isLoading">
+        💻 {{ materials.length }} demande(s)
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div class="filters-bar">
+      <div class="search-wrapper">
+        <span class="search-icon">🔍</span>
+        <input
+          type="text"
+          placeholder="Rechercher par nom, matricule, société, ticket..."
+          [(ngModel)]="searchQuery"
+          (ngModelChange)="onSearch()"
+          class="search-input"
+        />
+      </div>
+      <div class="results-count">
+        {{ filtered.length }} résultat(s)
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-state" *ngIf="isLoading">
+      <div class="loader"></div>
+      <p>Chargement des demandes...</p>
+    </div>
+
+    <!-- Empty -->
+    <div class="empty-state" *ngIf="!isLoading && filtered.length === 0">
+      <div class="empty-icon">💻</div>
+      <h3>Aucune demande de matériel</h3>
+      <p>Les demandes sont créées automatiquement lors du scan</p>
+      <a routerLink="/scan" class="empty-btn">📤 Scanner un document</a>
+    </div>
+
+    <!-- Cards Grid -->
+    <div class="employees-grid" *ngIf="!isLoading && filtered.length > 0">
+      <div class="employee-card"
+           *ngFor="let m of filtered"
+           (click)="openDetail(m)">
+
+        <div class="card-top">
+          <div class="emp-avatar" [style.background]="getAvatarColor(m)">
+            {{ getInitials(m) }}
+          </div>
+          <div class="emp-info">
+            <h3>{{ fullName(m) }}</h3>
+            <p class="emp-position">{{ m.direction || m.societe || '—' }}</p>
+          </div>
+        </div>
+
+        <div class="card-details">
+          <div class="card-detail-item" *ngIf="m.societe">
+            <span class="detail-icon">🏢</span>
+            <span>{{ m.societe }}</span>
+          </div>
+          <div class="card-detail-item" *ngIf="m.matricule">
+            <span class="detail-icon">🆔</span>
+            <span>{{ m.matricule }}</span>
+          </div>
+          <div class="card-detail-item" *ngIf="m.numeroTicket">
+            <span class="detail-icon">🎫</span>
+            <span>Ticket {{ m.numeroTicket }}</span>
+          </div>
+          <div class="card-detail-item" *ngIf="selectedItems(m).length > 0">
+            <span class="detail-icon">📦</span>
+            <span>{{ selectedItems(m).join(', ') }}</span>
+          </div>
+        </div>
+
+        <div class="card-footer-row">
+          <span class="view-detail">Voir détails →</span>
+          <span class="card-date" *ngIf="m.createdAt">
+            {{ m.createdAt | date:'dd/MM/yyyy' }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detail Modal -->
+    <div class="modal-overlay" *ngIf="selected" (click)="closeDetail()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+
+        <div class="modal-header">
+          <div class="modal-emp-header">
+            <div class="modal-avatar" [style.background]="getAvatarColor(selected)">
+              {{ getInitials(selected) }}
+            </div>
+            <div>
+              <h2>{{ fullName(selected) }}</h2>
+              <p>Ticket {{ selected.numeroTicket || '—' }}</p>
+            </div>
+          </div>
+          <button class="close-btn" (click)="closeDetail()">✕</button>
+        </div>
+
+        <div class="modal-body">
+
+          <div class="detail-section">
+            <h3>Information générale</h3>
+            <div class="detail-grid">
+              <div class="detail-item">
+                <label>Société</label>
+                <p>{{ selected.societe || '—' }}</p>
+              </div>
+              <div class="detail-item">
+                <label>Site</label>
+                <p>{{ selected.site || '—' }}</p>
+              </div>
+              <div class="detail-item">
+                <label>Direction</label>
+                <p>{{ selected.direction || '—' }}</p>
+              </div>
+              <div class="detail-item">
+                <label>Fonction</label>
+                <p>{{ selected.fonction || '—' }}</p>
+              </div>
+              <div class="detail-item">
+                <label>Prénom</label>
+                <p>{{ selected.prenom || '—' }}</p>
+              </div>
+              <div class="detail-item">
+                <label>Nom</label>
+                <p>{{ selected.nom || '—' }}</p>
+              </div>
+              <div class="detail-item">
+                <label>Matricule</label>
+                <p>{{ selected.matricule || '—' }}</p>
+              </div>
+              <div class="detail-item">
+                <label>N° de ticket</label>
+                <p>{{ selected.numeroTicket || '—' }}</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-section">
+            <h3>Ordinateur</h3>
+            <div class="detail-grid">
+              <div class="detail-item"><label>Desktop</label><p>{{ yesNo(selected.ordinateurDesktop) }}</p></div>
+              <div class="detail-item"><label>Laptop</label><p>{{ yesNo(selected.ordinateurLaptop) }}</p></div>
+              <div class="detail-item"><label>iPad</label><p>{{ yesNo(selected.ordinateurIpad) }}</p></div>
+            </div>
+          </div>
+
+          <div class="detail-section">
+            <h3>Téléphone</h3>
+            <div class="detail-grid">
+              <div class="detail-item"><label>Poste interne</label><p>{{ yesNo(selected.telephonePosteInterne) }}</p></div>
+              <div class="detail-item"><label>Smartphone</label><p>{{ yesNo(selected.telephoneSmartphone) }}</p></div>
+            </div>
+          </div>
+
+          <div class="detail-section">
+            <h3>Internet</h3>
+            <div class="detail-grid">
+              <div class="detail-item"><label>Clé Internet</label><p>{{ yesNo(selected.internetCleInternet) }}</p></div>
+              <div class="detail-item"><label>Puce Internet</label><p>{{ yesNo(selected.internetPuceInternet) }}</p></div>
+            </div>
+          </div>
+
+          <div class="detail-section" *ngIf="selected.attachedFile">
+            <h3>Document joint</h3>
+            <button class="attached-file-btn" (click)="openAttachedFile(selected)">
+              📎 Ouvrir le document d'origine
+            </button>
+          </div>
+
+          <div class="detail-section">
+            <h3>Métadonnées</h3>
+            <div class="detail-grid">
+              <div class="detail-item">
+                <label>Créé le</label>
+                <p>{{ selected.createdAt | date:'dd/MM/yyyy HH:mm' }}</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="modal-footer">
+          <button class="close-modal-btn" (click)="closeDetail()">Fermer</button>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+</div>

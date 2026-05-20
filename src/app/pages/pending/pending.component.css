@@ -264,3 +264,17 @@
 /* ── Aperçu fichier scanné ── */
 .file-modal { max-width:820px; }
 .scanned-image { max-width:100%; max-height:72vh; display:block; margin:0 auto; }
+
+/* ── Case à cocher dans le drawer d'édition ── */
+.checkbox-row {
+  display:flex; align-items:center; gap:.6rem;
+  padding:.55rem .7rem; border:1px solid #d1d5db; border-radius:8px;
+  cursor:pointer; user-select:none;
+}
+.checkbox-row input[type="checkbox"] { width:1.05rem; height:1.05rem; cursor:pointer; }
+
+.edit-row select {
+  padding:.55rem .7rem; border:1px solid #d1d5db;
+  border-radius:8px; font-size:.95rem; background:#fff; cursor:pointer;
+}
+.edit-row select:focus { outline:none; border-color:#0d9488; }

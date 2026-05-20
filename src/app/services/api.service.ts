@@ -86,4 +86,37 @@ export class ApiService {
     return this.http.get(`${this.baseUrl}/employees/${id}/file`,
       { headers: this.getFileHeaders(), responseType: 'blob' });
   }
+
+  // ── Matériels ─────────────────────────────────────────────
+  getAllMaterials(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/materials`,
+      { headers: this.getHeaders() });
+  }
+
+  getMaterialFile(id: string): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/materials/${id}/file`,
+      { headers: this.getFileHeaders(), responseType: 'blob' });
+  }
+
+  // ── Matériels externes ────────────────────────────────────
+  getAllExternalMaterials(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/external-materials`,
+      { headers: this.getHeaders() });
+  }
+
+  getExternalMaterialFile(id: string): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/external-materials/${id}/file`,
+      { headers: this.getFileHeaders(), responseType: 'blob' });
+  }
+
+  // ── Demandes d'accès ──────────────────────────────────────
+  getAllAccessRequests(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/access-requests`,
+      { headers: this.getHeaders() });
+  }
+
+  getAccessRequestFile(id: string): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/access-requests/${id}/file`,
+      { headers: this.getFileHeaders(), responseType: 'blob' });
+  }
 }

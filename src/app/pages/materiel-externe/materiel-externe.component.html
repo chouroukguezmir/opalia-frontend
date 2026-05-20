@@ -1,0 +1,166 @@
+<div class="app-layout">
+  <app-sidebar></app-sidebar>
+
+  <main class="main-content">
+
+    <div class="page-header">
+      <div>
+        <h1>Matériel Externe</h1>
+        <p>Demandes d'utilisation de matériel informatique externe</p>
+      </div>
+      <div class="header-count" *ngIf="!isLoading">
+        🔌 {{ items.length }} demande(s)
+      </div>
+    </div>
+
+    <div class="filters-bar">
+      <div class="search-wrapper">
+        <span class="search-icon">🔍</span>
+        <input
+          type="text"
+          placeholder="Rechercher par nom, rôle, société, ticket..."
+          [(ngModel)]="searchQuery"
+          (ngModelChange)="onSearch()"
+          class="search-input"
+        />
+      </div>
+      <div class="results-count">{{ filtered.length }} résultat(s)</div>
+    </div>
+
+    <div class="loading-state" *ngIf="isLoading">
+      <div class="loader"></div>
+      <p>Chargement des demandes...</p>
+    </div>
+
+    <div class="empty-state" *ngIf="!isLoading && filtered.length === 0">
+      <div class="empty-icon">🔌</div>
+      <h3>Aucune demande de matériel externe</h3>
+      <p>Les demandes sont créées automatiquement lors du scan</p>
+      <a routerLink="/scan" class="empty-btn">📤 Scanner un document</a>
+    </div>
+
+    <div class="employees-grid" *ngIf="!isLoading && filtered.length > 0">
+      <div class="employee-card"
+           *ngFor="let x of filtered"
+           (click)="openDetail(x)">
+
+        <div class="card-top">
+          <div class="emp-avatar" [style.background]="getAvatarColor(x)">
+            {{ getInitials(x) }}
+          </div>
+          <div class="emp-info">
+            <h3>{{ fullName(x) }}</h3>
+            <p class="emp-position">{{ x.role || '—' }}</p>
+          </div>
+        </div>
+
+        <div class="card-details">
+          <div class="card-detail-item" *ngIf="x.societeUniversite">
+            <span class="detail-icon">🏢</span>
+            <span>{{ x.societeUniversite }}</span>
+          </div>
+          <div class="card-detail-item" *ngIf="x.directionDepartement">
+            <span class="detail-icon">🗂️</span>
+            <span>{{ x.directionDepartement }}</span>
+          </div>
+          <div class="card-detail-item" *ngIf="x.matricule">
+            <span class="detail-icon">🆔</span>
+            <span>{{ x.matricule }}</span>
+          </div>
+          <div class="card-detail-item" *ngIf="selectedItems(x).length > 0">
+            <span class="detail-icon">📦</span>
+            <span>{{ selectedItems(x).join(', ') }}</span>
+          </div>
+        </div>
+
+        <div class="card-footer-row">
+          <span class="view-detail">Voir détails →</span>
+          <span class="card-date" *ngIf="x.createdAt">
+            {{ x.createdAt | date:'dd/MM/yyyy' }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detail Modal -->
+    <div class="modal-overlay" *ngIf="selected" (click)="closeDetail()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+
+        <div class="modal-header">
+          <div class="modal-emp-header">
+            <div class="modal-avatar" [style.background]="getAvatarColor(selected)">
+              {{ getInitials(selected) }}
+            </div>
+            <div>
+              <h2>{{ fullName(selected) }}</h2>
+              <p>{{ selected.role || '—' }}</p>
+            </div>
+          </div>
+          <button class="close-btn" (click)="closeDetail()">✕</button>
+        </div>
+
+        <div class="modal-body">
+
+          <div class="detail-section">
+            <h3>Information générale</h3>
+            <div class="detail-grid">
+              <div class="detail-item"><label>Rôle</label><p>{{ selected.role || '—' }}</p></div>
+              <div class="detail-item"><label>Société / Université</label><p>{{ selected.societeUniversite || '—' }}</p></div>
+              <div class="detail-item"><label>Site</label><p>{{ selected.site || '—' }}</p></div>
+              <div class="detail-item"><label>Direction / Département</label><p>{{ selected.directionDepartement || '—' }}</p></div>
+              <div class="detail-item"><label>Fonction</label><p>{{ selected.fonction || '—' }}</p></div>
+              <div class="detail-item"><label>Encadreur Opalia</label><p>{{ selected.encadreurOpalia || '—' }}</p></div>
+              <div class="detail-item"><label>Prénom</label><p>{{ selected.prenom || '—' }}</p></div>
+              <div class="detail-item"><label>Nom</label><p>{{ selected.nom || '—' }}</p></div>
+              <div class="detail-item"><label>Matricule</label><p>{{ selected.matricule || '—' }}</p></div>
+              <div class="detail-item"><label>Téléphone</label><p>{{ selected.tel || '—' }}</p></div>
+            </div>
+          </div>
+
+          <div class="detail-section">
+            <h3>Détail de la demande</h3>
+            <div class="detail-grid">
+              <div class="detail-item"><label>N° ticket</label><p>{{ selected.numeroTicket || '—' }}</p></div>
+              <div class="detail-item"><label>Raison d'autorisation</label><p>{{ selected.raisonAutorisation || '—' }}</p></div>
+            </div>
+          </div>
+
+          <div class="detail-section">
+            <h3>Matériels à autoriser</h3>
+            <div class="detail-grid">
+              <div class="detail-item"><label>Clé USB</label><p>{{ yesNo(selected.cleUsb) }}</p></div>
+              <div class="detail-item"><label>Disque dur externe</label><p>{{ yesNo(selected.disqueDurExterne) }}</p></div>
+              <div class="detail-item"><label>Clé 4G</label><p>{{ yesNo(selected.cle4G) }}</p></div>
+              <div class="detail-item"><label>Lecteur DVD</label><p>{{ yesNo(selected.lecteurDvd) }}</p></div>
+              <div class="detail-item"><label>Ordinateur personnel</label><p>{{ yesNo(selected.ordinateurPersonale) }}</p></div>
+            </div>
+          </div>
+
+          <div class="detail-section" *ngIf="selected.attachedFile">
+            <h3>Document joint</h3>
+            <button class="attached-file-btn" (click)="openAttachedFile(selected)">
+              📎 Ouvrir le document d'origine
+            </button>
+          </div>
+
+          <div class="detail-section">
+            <h3>Métadonnées</h3>
+            <div class="detail-grid">
+              <div class="detail-item">
+                <label>Créé le</label>
+                <p>{{ selected.createdAt | date:'dd/MM/yyyy HH:mm' }}</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="modal-footer">
+          <button class="close-modal-btn" (click)="closeDetail()">Fermer</button>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+</div>

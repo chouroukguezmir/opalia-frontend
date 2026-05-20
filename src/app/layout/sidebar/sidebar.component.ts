@@ -18,6 +18,9 @@ menuItems = [
   { icon: '⏳', label: 'En attente',         route: '/pending'   },
   { icon: '📁', label: 'Documents',          route: '/documents' },
   { icon: '👥', label: 'Employés',           route: '/employees' },
+  { icon: '💻', label: 'Matériels',          route: '/materiels' },
+  { icon: '🔌', label: 'Matériel externe',   route: '/materiel-externe' },
+  { icon: '🔐', label: 'Accès',              route: '/access' },
 ];
   constructor(private authService: AuthService, private router: Router) {}
 

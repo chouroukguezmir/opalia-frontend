@@ -38,5 +38,23 @@ export const routes: Routes = [
       import('./pages/employees/employees.component').then(m => m.EmployeesComponent),
     canActivate: [authGuard]
   },
+  {
+    path: 'materiels',
+    loadComponent: () =>
+      import('./pages/materiels/materiels.component').then(m => m.MaterielsComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'materiel-externe',
+    loadComponent: () =>
+      import('./pages/materiel-externe/materiel-externe.component').then(m => m.MaterielExterneComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'access',
+    loadComponent: () =>
+      import('./pages/access/access.component').then(m => m.AccessComponent),
+    canActivate: [authGuard]
+  },
   { path: '**', redirectTo: 'login' }
 ];

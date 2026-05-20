@@ -29,8 +29,9 @@ export class PendingComponent implements OnInit {
   errorMessage = '';
 
   private fieldLabels: any = {
+    // Employee
     name: 'Nom (User to be activated)',
-    company: 'Société',
+    company: 'Société (Company)',
     site: 'Site',
     department: 'Département',
     mobile: 'Mobile',
@@ -38,7 +39,70 @@ export class PendingComponent implements OnInit {
     kindOfUpdate: 'Type de demande',
     requester: 'Demandeur (Requester)',
     requesterJobRole: 'Job Role du demandeur',
+    // Matériel
+    societe: 'Société',
+    direction: 'Direction',
+    fonction: 'Fonction',
+    prenom: 'Prénom',
+    nom: 'Nom',
+    matricule: 'Matricule',
+    numeroTicket: 'N° de ticket',
+    ordinateurDesktop: 'Ordinateur — Desktop',
+    ordinateurLaptop: 'Ordinateur — Laptop',
+    ordinateurIpad: 'Ordinateur — iPad',
+    telephonePosteInterne: 'Téléphone — Poste interne',
+    telephoneSmartphone: 'Téléphone — Smartphone',
+    internetCleInternet: 'Internet — Clé Internet',
+    internetPuceInternet: 'Internet — Puce Internet',
+    // Matériel externe
+    role: 'Rôle',
+    societeUniversite: 'Société / Université',
+    directionDepartement: 'Direction / Département',
+    encadreurOpalia: 'Encadreur Opalia',
+    tel: 'Téléphone',
+    raisonAutorisation: 'Raison d\'autorisation',
+    cleUsb: 'Clé USB',
+    disqueDurExterne: 'Disque dur externe',
+    cle4G: 'Clé 4G',
+    lecteurDvd: 'Lecteur DVD',
+    ordinateurPersonale: 'Ordinateur personnel',
+    // Accès
+    classification: 'Classification',
   };
+
+  /** Champs à valeurs fixes — rendus en <select> dans le drawer. */
+  private selectOptions: { [key: string]: string[] } = {
+    kindOfUpdate:   ['Activation', 'Modification', 'Removal', 'Suspension', 'Reactivation'],
+    role:           ['Employeur Opalia', 'Stagiaire', 'Consultant'],
+    classification: ['Confidentiel', 'Non confidentiel'],
+  };
+
+  private employeeFields = [
+    'name','company','site','department','mobile','officePhone',
+    'kindOfUpdate','requester','requesterJobRole'
+  ];
+  private materialFields = [
+    'societe','site','direction','fonction','prenom','nom','matricule',
+    'numeroTicket','ordinateurDesktop','ordinateurLaptop','ordinateurIpad',
+    'telephonePosteInterne','telephoneSmartphone',
+    'internetCleInternet','internetPuceInternet'
+  ];
+  private externalMaterialFields = [
+    'role','societeUniversite','site','directionDepartement','fonction',
+    'encadreurOpalia','prenom','nom','matricule','tel',
+    'numeroTicket','raisonAutorisation',
+    'cleUsb','disqueDurExterne','cle4G','lecteurDvd','ordinateurPersonale'
+  ];
+  private accessRequestFields = [
+    'societe','site','direction','fonction','prenom','nom','matricule','tel',
+    'classification'
+  ];
+  private boolFields = new Set([
+    'ordinateurDesktop','ordinateurLaptop','ordinateurIpad',
+    'telephonePosteInterne','telephoneSmartphone',
+    'internetCleInternet','internetPuceInternet',
+    'cleUsb','disqueDurExterne','cle4G','lecteurDvd','ordinateurPersonale'
+  ]);
 
   constructor(private apiService: ApiService) {}
 
@@ -56,6 +120,10 @@ export class PendingComponent implements OnInit {
   openDrawer(doc: any) {
     this.selectedDoc = doc;
     this.editFields = { ...(doc.extractedFields || {}) };
+    // S'assure que toutes les clés attendues existent pour ce type
+    this.fieldKeys().forEach(k => {
+      if (this.editFields[k] === undefined) this.editFields[k] = '';
+    });
     this.showDrawer = true;
   }
 
@@ -66,11 +134,37 @@ export class PendingComponent implements OnInit {
   }
 
   fieldKeys(): string[] {
+    if (this.selectedDoc?.documentType === 'EMPLOYEE') return this.employeeFields;
+    if (this.selectedDoc?.documentType === 'TYPE_A')   return this.accessRequestFields;
+    if (this.selectedDoc?.documentType === 'TYPE_B')   return this.materialFields;
+    if (this.selectedDoc?.documentType === 'TYPE_C')   return this.externalMaterialFields;
     return Object.keys(this.editFields);
+  }
+
+  isSelectField(key: string): boolean {
+    return !!this.selectOptions[key];
+  }
+
+  optionsFor(key: string): string[] {
+    return this.selectOptions[key] || [];
   }
 
   fieldLabel(key: string): string {
     return this.fieldLabels[key] || key;
+  }
+
+  isBoolField(key: string): boolean {
+    return this.boolFields.has(key);
+  }
+
+  isChecked(key: string): boolean {
+    const v = this.editFields[key];
+    return v === true || v === 'true';
+  }
+
+  setBool(key: string, ev: Event): void {
+    const checked = (ev.target as HTMLInputElement).checked;
+    this.editFields[key] = checked ? 'true' : 'false';
   }
 
   saveFields() {

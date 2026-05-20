@@ -88,7 +88,26 @@
           <div class="edit-form">
             <div class="edit-row" *ngFor="let key of fieldKeys()">
               <label>{{ fieldLabel(key) }}</label>
-              <input type="text" [(ngModel)]="editFields[key]" />
+
+              <!-- Champ booléen → case à cocher -->
+              <label class="checkbox-row" *ngIf="isBoolField(key)">
+                <input type="checkbox"
+                       [checked]="isChecked(key)"
+                       (change)="setBool(key, $event)" />
+                <span>{{ isChecked(key) ? 'Oui' : 'Non' }}</span>
+              </label>
+
+              <!-- Champ à valeurs fixes (enum) → liste déroulante -->
+              <select *ngIf="!isBoolField(key) && isSelectField(key)"
+                      [(ngModel)]="editFields[key]">
+                <option value="">— Non défini —</option>
+                <option *ngFor="let opt of optionsFor(key)" [value]="opt">{{ opt }}</option>
+              </select>
+
+              <!-- Texte libre → input -->
+              <input type="text"
+                     *ngIf="!isBoolField(key) && !isSelectField(key)"
+                     [(ngModel)]="editFields[key]" />
             </div>
           </div>
         </div>
