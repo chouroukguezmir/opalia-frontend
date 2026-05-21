@@ -10,11 +10,11 @@
         <p>Demandes de matériel informatique extraites automatiquement</p>
       </div>
       <div class="header-count" *ngIf="!isLoading">
-        💻 {{ materials.length }} demande(s)
+        💻 {{ items.length }} demande(s)
       </div>
     </div>
 
-    <!-- Search -->
+    <!-- Filters -->
     <div class="filters-bar">
       <div class="search-wrapper">
         <span class="search-icon">🔍</span>
@@ -26,81 +26,109 @@
           class="search-input"
         />
       </div>
-      <div class="results-count">
-        {{ filtered.length }} résultat(s)
+      <div class="status-tabs">
+        <button class="status-tab" [class.active]="statusFilter==='all'" (click)="setStatusFilter('all')">
+          Tous <span class="badge">{{ countByStatus('all') }}</span>
+        </button>
+        <button class="status-tab" [class.active]="statusFilter==='pending'" (click)="setStatusFilter('pending')">
+          En attente <span class="badge pending">{{ countByStatus('pending') }}</span>
+        </button>
+        <button class="status-tab" [class.active]="statusFilter==='confirmed'" (click)="setStatusFilter('confirmed')">
+          Confirmé <span class="badge confirmed">{{ countByStatus('confirmed') }}</span>
+        </button>
       </div>
     </div>
 
     <!-- Loading -->
     <div class="loading-state" *ngIf="isLoading">
       <div class="loader"></div>
-      <p>Chargement des demandes...</p>
+      <p>Chargement des demandes…</p>
     </div>
 
     <!-- Empty -->
-    <div class="empty-state" *ngIf="!isLoading && filtered.length === 0">
+    <div class="empty-state" *ngIf="!isLoading && filteredItems.length === 0">
       <div class="empty-icon">💻</div>
       <h3>Aucune demande de matériel</h3>
       <p>Les demandes sont créées automatiquement lors du scan</p>
       <a routerLink="/scan" class="empty-btn">📤 Scanner un document</a>
     </div>
 
-    <!-- Cards Grid -->
-    <div class="employees-grid" *ngIf="!isLoading && filtered.length > 0">
-      <div class="employee-card"
-           *ngFor="let m of filtered"
-           (click)="openDetail(m)">
-
-        <div class="card-top">
-          <div class="emp-avatar" [style.background]="getAvatarColor(m)">
-            {{ getInitials(m) }}
-          </div>
-          <div class="emp-info">
-            <h3>{{ fullName(m) }}</h3>
-            <p class="emp-position">{{ m.direction || m.societe || '—' }}</p>
-          </div>
-        </div>
-
-        <div class="card-details">
-          <div class="card-detail-item" *ngIf="m.societe">
-            <span class="detail-icon">🏢</span>
-            <span>{{ m.societe }}</span>
-          </div>
-          <div class="card-detail-item" *ngIf="m.matricule">
-            <span class="detail-icon">🆔</span>
-            <span>{{ m.matricule }}</span>
-          </div>
-          <div class="card-detail-item" *ngIf="m.numeroTicket">
-            <span class="detail-icon">🎫</span>
-            <span>Ticket {{ m.numeroTicket }}</span>
-          </div>
-          <div class="card-detail-item" *ngIf="selectedItems(m).length > 0">
-            <span class="detail-icon">📦</span>
-            <span>{{ selectedItems(m).join(', ') }}</span>
-          </div>
-        </div>
-
-        <div class="card-footer-row">
-          <span class="view-detail">Voir détails →</span>
-          <span class="card-date" *ngIf="m.createdAt">
-            {{ m.createdAt | date:'dd/MM/yyyy' }}
-          </span>
-        </div>
-      </div>
+    <!-- Table -->
+    <div class="data-table-wrapper" *ngIf="!isLoading && filteredItems.length > 0">
+      <table class="data-table">
+        <thead>
+        <tr>
+          <th>Demandeur</th>
+          <th>Société</th>
+          <th>Direction</th>
+          <th>Matricule</th>
+          <th>Ticket</th>
+          <th>Matériel demandé</th>
+          <th>Date</th>
+          <th>Statut</th>
+          <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr *ngFor="let m of filteredItems"
+            (click)="openDetail(m)"
+            class="row-clickable">
+          <td>
+            <div class="cell-name">
+              <div class="emp-avatar small" [style.background]="getAvatarColor(m)">
+                {{ getInitials(m) }}
+              </div>
+              <span>{{ fullName(m) }}</span>
+            </div>
+          </td>
+          <td>{{ m.societe || '—' }}</td>
+          <td>{{ m.direction || '—' }}</td>
+          <td>{{ m.matricule || '—' }}</td>
+          <td>{{ m.numeroTicket || '—' }}</td>
+          <td>
+            <div class="chip-list" *ngIf="selectedItems(m).length > 0; else dashCell">
+              <span class="chip" *ngFor="let it of selectedItems(m)">{{ it }}</span>
+            </div>
+            <ng-template #dashCell><span class="muted">—</span></ng-template>
+          </td>
+          <td>{{ m.createdAt | date:'dd/MM/yyyy' }}</td>
+          <td>
+              <span class="status-badge"
+                    [class.pending]="m._status==='pending'"
+                    [class.confirmed]="m._status==='confirmed'">
+                {{ m._status === 'pending' ? '⏳ En attente' : '✓ Confirmé' }}
+              </span>
+          </td>
+          <td>
+            <div class="row-actions" *ngIf="m._status === 'pending'">
+              <button class="btn-action confirm"
+                      title="Confirmer"
+                      [disabled]="actionBusyId===m._pendingId"
+                      (click)="confirmRow(m, $event)">✓</button>
+              <button class="btn-action reject"
+                      title="Rejeter"
+                      [disabled]="actionBusyId===m._pendingId"
+                      (click)="rejectRow(m, $event)">✕</button>
+            </div>
+            <span *ngIf="m._status === 'confirmed'" class="muted">—</span>
+          </td>
+        </tr>
+        </tbody>
+      </table>
     </div>
 
     <!-- Detail Modal -->
-    <div class="modal-overlay" *ngIf="selected" (click)="closeDetail()">
+    <div class="modal-overlay" *ngIf="selectedItem" (click)="closeDetail()">
       <div class="modal-card" (click)="$event.stopPropagation()">
 
         <div class="modal-header">
           <div class="modal-emp-header">
-            <div class="modal-avatar" [style.background]="getAvatarColor(selected)">
-              {{ getInitials(selected) }}
+            <div class="modal-avatar" [style.background]="getAvatarColor(selectedItem)">
+              {{ getInitials(selectedItem) }}
             </div>
             <div>
-              <h2>{{ fullName(selected) }}</h2>
-              <p>Ticket {{ selected.numeroTicket || '—' }}</p>
+              <h2>{{ fullName(selectedItem) }}</h2>
+              <p>Ticket {{ selectedItem.numeroTicket || '—' }}</p>
             </div>
           </div>
           <button class="close-btn" (click)="closeDetail()">✕</button>
@@ -109,39 +137,56 @@
         <div class="modal-body">
 
           <div class="detail-section">
+            <h3>Statut</h3>
+            <span class="status-badge"
+                  [class.pending]="selectedItem._status==='pending'"
+                  [class.confirmed]="selectedItem._status==='confirmed'">
+              {{ selectedItem._status === 'pending' ? '⏳ En attente de validation' : '✓ Confirmé' }}
+            </span>
+          </div>
+
+          <div class="detail-section">
             <h3>Information générale</h3>
             <div class="detail-grid">
               <div class="detail-item">
                 <label>Société</label>
-                <p>{{ selected.societe || '—' }}</p>
+                <ng-container *ngIf="selectedItem._status==='pending'; else mSoc"><input class="edit-input" [(ngModel)]="selectedItem.societe" /></ng-container>
+                <ng-template #mSoc><p>{{ selectedItem.societe || '—' }}</p></ng-template>
               </div>
               <div class="detail-item">
                 <label>Site</label>
-                <p>{{ selected.site || '—' }}</p>
+                <ng-container *ngIf="selectedItem._status==='pending'; else mSite"><input class="edit-input" [(ngModel)]="selectedItem.site" /></ng-container>
+                <ng-template #mSite><p>{{ selectedItem.site || '—' }}</p></ng-template>
               </div>
               <div class="detail-item">
                 <label>Direction</label>
-                <p>{{ selected.direction || '—' }}</p>
+                <ng-container *ngIf="selectedItem._status==='pending'; else mDir"><input class="edit-input" [(ngModel)]="selectedItem.direction" /></ng-container>
+                <ng-template #mDir><p>{{ selectedItem.direction || '—' }}</p></ng-template>
               </div>
               <div class="detail-item">
                 <label>Fonction</label>
-                <p>{{ selected.fonction || '—' }}</p>
+                <ng-container *ngIf="selectedItem._status==='pending'; else mFonc"><input class="edit-input" [(ngModel)]="selectedItem.fonction" /></ng-container>
+                <ng-template #mFonc><p>{{ selectedItem.fonction || '—' }}</p></ng-template>
               </div>
               <div class="detail-item">
                 <label>Prénom</label>
-                <p>{{ selected.prenom || '—' }}</p>
+                <ng-container *ngIf="selectedItem._status==='pending'; else mPre"><input class="edit-input" [(ngModel)]="selectedItem.prenom" /></ng-container>
+                <ng-template #mPre><p>{{ selectedItem.prenom || '—' }}</p></ng-template>
               </div>
               <div class="detail-item">
                 <label>Nom</label>
-                <p>{{ selected.nom || '—' }}</p>
+                <ng-container *ngIf="selectedItem._status==='pending'; else mNom"><input class="edit-input" [(ngModel)]="selectedItem.nom" /></ng-container>
+                <ng-template #mNom><p>{{ selectedItem.nom || '—' }}</p></ng-template>
               </div>
               <div class="detail-item">
                 <label>Matricule</label>
-                <p>{{ selected.matricule || '—' }}</p>
+                <ng-container *ngIf="selectedItem._status==='pending'; else mMat"><input class="edit-input" [(ngModel)]="selectedItem.matricule" /></ng-container>
+                <ng-template #mMat><p>{{ selectedItem.matricule || '—' }}</p></ng-template>
               </div>
               <div class="detail-item">
                 <label>N° de ticket</label>
-                <p>{{ selected.numeroTicket || '—' }}</p>
+                <ng-container *ngIf="selectedItem._status==='pending'; else mTkt"><input class="edit-input" [(ngModel)]="selectedItem.numeroTicket" /></ng-container>
+                <ng-template #mTkt><p>{{ selectedItem.numeroTicket || '—' }}</p></ng-template>
               </div>
             </div>
           </div>
@@ -149,31 +194,73 @@
           <div class="detail-section">
             <h3>Ordinateur</h3>
             <div class="detail-grid">
-              <div class="detail-item"><label>Desktop</label><p>{{ yesNo(selected.ordinateurDesktop) }}</p></div>
-              <div class="detail-item"><label>Laptop</label><p>{{ yesNo(selected.ordinateurLaptop) }}</p></div>
-              <div class="detail-item"><label>iPad</label><p>{{ yesNo(selected.ordinateurIpad) }}</p></div>
+              <div class="detail-item">
+                <label>Desktop</label>
+                <ng-container *ngIf="selectedItem._status==='pending'; else mOdt">
+                  <label class="edit-checkbox-row"><input type="checkbox" [(ngModel)]="selectedItem.ordinateurDesktop" /> Desktop</label>
+                </ng-container>
+                <ng-template #mOdt><p>{{ yesNo(selectedItem.ordinateurDesktop) }}</p></ng-template>
+              </div>
+              <div class="detail-item">
+                <label>Laptop</label>
+                <ng-container *ngIf="selectedItem._status==='pending'; else mOlp">
+                  <label class="edit-checkbox-row"><input type="checkbox" [(ngModel)]="selectedItem.ordinateurLaptop" /> Laptop</label>
+                </ng-container>
+                <ng-template #mOlp><p>{{ yesNo(selectedItem.ordinateurLaptop) }}</p></ng-template>
+              </div>
+              <div class="detail-item">
+                <label>iPad</label>
+                <ng-container *ngIf="selectedItem._status==='pending'; else mOip">
+                  <label class="edit-checkbox-row"><input type="checkbox" [(ngModel)]="selectedItem.ordinateurIpad" /> iPad</label>
+                </ng-container>
+                <ng-template #mOip><p>{{ yesNo(selectedItem.ordinateurIpad) }}</p></ng-template>
+              </div>
             </div>
           </div>
 
           <div class="detail-section">
             <h3>Téléphone</h3>
             <div class="detail-grid">
-              <div class="detail-item"><label>Poste interne</label><p>{{ yesNo(selected.telephonePosteInterne) }}</p></div>
-              <div class="detail-item"><label>Smartphone</label><p>{{ yesNo(selected.telephoneSmartphone) }}</p></div>
+              <div class="detail-item">
+                <label>Poste interne</label>
+                <ng-container *ngIf="selectedItem._status==='pending'; else mTpi">
+                  <label class="edit-checkbox-row"><input type="checkbox" [(ngModel)]="selectedItem.telephonePosteInterne" /> Poste interne</label>
+                </ng-container>
+                <ng-template #mTpi><p>{{ yesNo(selectedItem.telephonePosteInterne) }}</p></ng-template>
+              </div>
+              <div class="detail-item">
+                <label>Smartphone</label>
+                <ng-container *ngIf="selectedItem._status==='pending'; else mTsm">
+                  <label class="edit-checkbox-row"><input type="checkbox" [(ngModel)]="selectedItem.telephoneSmartphone" /> Smartphone</label>
+                </ng-container>
+                <ng-template #mTsm><p>{{ yesNo(selectedItem.telephoneSmartphone) }}</p></ng-template>
+              </div>
             </div>
           </div>
 
           <div class="detail-section">
             <h3>Internet</h3>
             <div class="detail-grid">
-              <div class="detail-item"><label>Clé Internet</label><p>{{ yesNo(selected.internetCleInternet) }}</p></div>
-              <div class="detail-item"><label>Puce Internet</label><p>{{ yesNo(selected.internetPuceInternet) }}</p></div>
+              <div class="detail-item">
+                <label>Clé Internet</label>
+                <ng-container *ngIf="selectedItem._status==='pending'; else mIcle">
+                  <label class="edit-checkbox-row"><input type="checkbox" [(ngModel)]="selectedItem.internetCleInternet" /> Clé Internet</label>
+                </ng-container>
+                <ng-template #mIcle><p>{{ yesNo(selectedItem.internetCleInternet) }}</p></ng-template>
+              </div>
+              <div class="detail-item">
+                <label>Puce Internet</label>
+                <ng-container *ngIf="selectedItem._status==='pending'; else mIpuc">
+                  <label class="edit-checkbox-row"><input type="checkbox" [(ngModel)]="selectedItem.internetPuceInternet" /> Puce Internet</label>
+                </ng-container>
+                <ng-template #mIpuc><p>{{ yesNo(selectedItem.internetPuceInternet) }}</p></ng-template>
+              </div>
             </div>
           </div>
 
-          <div class="detail-section" *ngIf="selected.attachedFile">
+          <div class="detail-section" *ngIf="selectedItem.attachedFile || selectedItem._status === 'pending'">
             <h3>Document joint</h3>
-            <button class="attached-file-btn" (click)="openAttachedFile(selected)">
+            <button class="attached-file-btn" (click)="openAttachedFile(selectedItem, $event)">
               📎 Ouvrir le document d'origine
             </button>
           </div>
@@ -183,7 +270,7 @@
             <div class="detail-grid">
               <div class="detail-item">
                 <label>Créé le</label>
-                <p>{{ selected.createdAt | date:'dd/MM/yyyy HH:mm' }}</p>
+                <p>{{ selectedItem.createdAt | date:'dd/MM/yyyy HH:mm' }}</p>
               </div>
             </div>
           </div>
@@ -191,6 +278,25 @@
         </div>
 
         <div class="modal-footer">
+          <span *ngIf="saveFeedback"
+                class="save-feedback"
+                [class.ok]="saveFeedback.type==='ok'"
+                [class.error]="saveFeedback.type==='error'">
+            {{ saveFeedback.text }}
+          </span>
+          <ng-container *ngIf="selectedItem._status === 'pending'">
+            <button class="btn-modal-save"
+                    [disabled]="saveBusy"
+                    (click)="saveEdits()">
+              {{ saveBusy ? '⏳ …' : '💾 Enregistrer' }}
+            </button>
+            <button class="btn-modal-reject"
+                    [disabled]="actionBusyId===selectedItem._pendingId"
+                    (click)="rejectRow(selectedItem); closeDetail()">Rejeter</button>
+            <button class="btn-modal-confirm"
+                    [disabled]="actionBusyId===selectedItem._pendingId"
+                    (click)="confirmRow(selectedItem); closeDetail()">Confirmer</button>
+          </ng-container>
           <button class="close-modal-btn" (click)="closeDetail()">Fermer</button>
         </div>
 

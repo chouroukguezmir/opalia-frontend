@@ -24,76 +24,106 @@
           class="search-input"
         />
       </div>
-      <div class="results-count">{{ filtered.length }} résultat(s)</div>
+      <div class="status-tabs">
+        <button class="status-tab" [class.active]="statusFilter==='all'" (click)="setStatusFilter('all')">
+          Tous <span class="badge">{{ countByStatus('all') }}</span>
+        </button>
+        <button class="status-tab" [class.active]="statusFilter==='pending'" (click)="setStatusFilter('pending')">
+          En attente <span class="badge pending">{{ countByStatus('pending') }}</span>
+        </button>
+        <button class="status-tab" [class.active]="statusFilter==='confirmed'" (click)="setStatusFilter('confirmed')">
+          Confirmé <span class="badge confirmed">{{ countByStatus('confirmed') }}</span>
+        </button>
+      </div>
     </div>
 
     <div class="loading-state" *ngIf="isLoading">
       <div class="loader"></div>
-      <p>Chargement des demandes...</p>
+      <p>Chargement des demandes…</p>
     </div>
 
-    <div class="empty-state" *ngIf="!isLoading && filtered.length === 0">
+    <div class="empty-state" *ngIf="!isLoading && filteredItems.length === 0">
       <div class="empty-icon">🔌</div>
       <h3>Aucune demande de matériel externe</h3>
       <p>Les demandes sont créées automatiquement lors du scan</p>
       <a routerLink="/scan" class="empty-btn">📤 Scanner un document</a>
     </div>
 
-    <div class="employees-grid" *ngIf="!isLoading && filtered.length > 0">
-      <div class="employee-card"
-           *ngFor="let x of filtered"
-           (click)="openDetail(x)">
-
-        <div class="card-top">
-          <div class="emp-avatar" [style.background]="getAvatarColor(x)">
-            {{ getInitials(x) }}
-          </div>
-          <div class="emp-info">
-            <h3>{{ fullName(x) }}</h3>
-            <p class="emp-position">{{ x.role || '—' }}</p>
-          </div>
-        </div>
-
-        <div class="card-details">
-          <div class="card-detail-item" *ngIf="x.societeUniversite">
-            <span class="detail-icon">🏢</span>
-            <span>{{ x.societeUniversite }}</span>
-          </div>
-          <div class="card-detail-item" *ngIf="x.directionDepartement">
-            <span class="detail-icon">🗂️</span>
-            <span>{{ x.directionDepartement }}</span>
-          </div>
-          <div class="card-detail-item" *ngIf="x.matricule">
-            <span class="detail-icon">🆔</span>
-            <span>{{ x.matricule }}</span>
-          </div>
-          <div class="card-detail-item" *ngIf="selectedItems(x).length > 0">
-            <span class="detail-icon">📦</span>
-            <span>{{ selectedItems(x).join(', ') }}</span>
-          </div>
-        </div>
-
-        <div class="card-footer-row">
-          <span class="view-detail">Voir détails →</span>
-          <span class="card-date" *ngIf="x.createdAt">
-            {{ x.createdAt | date:'dd/MM/yyyy' }}
-          </span>
-        </div>
-      </div>
+    <div class="data-table-wrapper" *ngIf="!isLoading && filteredItems.length > 0">
+      <table class="data-table">
+        <thead>
+        <tr>
+          <th>Demandeur</th>
+          <th>Rôle</th>
+          <th>Société / Univ.</th>
+          <th>Encadreur</th>
+          <th>Matricule</th>
+          <th>Matériel à autoriser</th>
+          <th>Date</th>
+          <th>Statut</th>
+          <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr *ngFor="let x of filteredItems"
+            (click)="openDetail(x)"
+            class="row-clickable">
+          <td>
+            <div class="cell-name">
+              <div class="emp-avatar small" [style.background]="getAvatarColor(x)">
+                {{ getInitials(x) }}
+              </div>
+              <span>{{ fullName(x) }}</span>
+            </div>
+          </td>
+          <td>{{ x.role || '—' }}</td>
+          <td>{{ x.societeUniversite || '—' }}</td>
+          <td>{{ x.encadreurOpalia || '—' }}</td>
+          <td>{{ x.matricule || '—' }}</td>
+          <td>
+            <div class="chip-list" *ngIf="selectedItems(x).length > 0; else dashCell">
+              <span class="chip" *ngFor="let it of selectedItems(x)">{{ it }}</span>
+            </div>
+            <ng-template #dashCell><span class="muted">—</span></ng-template>
+          </td>
+          <td>{{ x.createdAt | date:'dd/MM/yyyy' }}</td>
+          <td>
+              <span class="status-badge"
+                    [class.pending]="x._status==='pending'"
+                    [class.confirmed]="x._status==='confirmed'">
+                {{ x._status === 'pending' ? '⏳ En attente' : '✓ Confirmé' }}
+              </span>
+          </td>
+          <td>
+            <div class="row-actions" *ngIf="x._status === 'pending'">
+              <button class="btn-action confirm"
+                      title="Confirmer"
+                      [disabled]="actionBusyId===x._pendingId"
+                      (click)="confirmRow(x, $event)">✓</button>
+              <button class="btn-action reject"
+                      title="Rejeter"
+                      [disabled]="actionBusyId===x._pendingId"
+                      (click)="rejectRow(x, $event)">✕</button>
+            </div>
+            <span *ngIf="x._status === 'confirmed'" class="muted">—</span>
+          </td>
+        </tr>
+        </tbody>
+      </table>
     </div>
 
     <!-- Detail Modal -->
-    <div class="modal-overlay" *ngIf="selected" (click)="closeDetail()">
+    <div class="modal-overlay" *ngIf="selectedItem" (click)="closeDetail()">
       <div class="modal-card" (click)="$event.stopPropagation()">
 
         <div class="modal-header">
           <div class="modal-emp-header">
-            <div class="modal-avatar" [style.background]="getAvatarColor(selected)">
-              {{ getInitials(selected) }}
+            <div class="modal-avatar" [style.background]="getAvatarColor(selectedItem)">
+              {{ getInitials(selectedItem) }}
             </div>
             <div>
-              <h2>{{ fullName(selected) }}</h2>
-              <p>{{ selected.role || '—' }}</p>
+              <h2>{{ fullName(selectedItem) }}</h2>
+              <p>{{ selectedItem.role || '—' }}</p>
             </div>
           </div>
           <button class="close-btn" (click)="closeDetail()">✕</button>
@@ -102,43 +132,137 @@
         <div class="modal-body">
 
           <div class="detail-section">
+            <h3>Statut</h3>
+            <span class="status-badge"
+                  [class.pending]="selectedItem._status==='pending'"
+                  [class.confirmed]="selectedItem._status==='confirmed'">
+              {{ selectedItem._status === 'pending' ? '⏳ En attente de validation' : '✓ Confirmé' }}
+            </span>
+          </div>
+
+          <div class="detail-section">
             <h3>Information générale</h3>
             <div class="detail-grid">
-              <div class="detail-item"><label>Rôle</label><p>{{ selected.role || '—' }}</p></div>
-              <div class="detail-item"><label>Société / Université</label><p>{{ selected.societeUniversite || '—' }}</p></div>
-              <div class="detail-item"><label>Site</label><p>{{ selected.site || '—' }}</p></div>
-              <div class="detail-item"><label>Direction / Département</label><p>{{ selected.directionDepartement || '—' }}</p></div>
-              <div class="detail-item"><label>Fonction</label><p>{{ selected.fonction || '—' }}</p></div>
-              <div class="detail-item"><label>Encadreur Opalia</label><p>{{ selected.encadreurOpalia || '—' }}</p></div>
-              <div class="detail-item"><label>Prénom</label><p>{{ selected.prenom || '—' }}</p></div>
-              <div class="detail-item"><label>Nom</label><p>{{ selected.nom || '—' }}</p></div>
-              <div class="detail-item"><label>Matricule</label><p>{{ selected.matricule || '—' }}</p></div>
-              <div class="detail-item"><label>Téléphone</label><p>{{ selected.tel || '—' }}</p></div>
+              <div class="detail-item">
+                <label>Rôle</label>
+                <ng-container *ngIf="selectedItem._status==='pending'; else xRol">
+                  <select class="edit-select" [(ngModel)]="selectedItem.role">
+                    <option value="">—</option>
+                    <option *ngFor="let opt of roleOptions" [value]="opt">{{ opt }}</option>
+                  </select>
+                </ng-container>
+                <ng-template #xRol><p>{{ selectedItem.role || '—' }}</p></ng-template>
+              </div>
+              <div class="detail-item">
+                <label>Société / Université</label>
+                <ng-container *ngIf="selectedItem._status==='pending'; else xSoc"><input class="edit-input" [(ngModel)]="selectedItem.societeUniversite" /></ng-container>
+                <ng-template #xSoc><p>{{ selectedItem.societeUniversite || '—' }}</p></ng-template>
+              </div>
+              <div class="detail-item">
+                <label>Site</label>
+                <ng-container *ngIf="selectedItem._status==='pending'; else xSite"><input class="edit-input" [(ngModel)]="selectedItem.site" /></ng-container>
+                <ng-template #xSite><p>{{ selectedItem.site || '—' }}</p></ng-template>
+              </div>
+              <div class="detail-item">
+                <label>Direction / Département</label>
+                <ng-container *ngIf="selectedItem._status==='pending'; else xDir"><input class="edit-input" [(ngModel)]="selectedItem.directionDepartement" /></ng-container>
+                <ng-template #xDir><p>{{ selectedItem.directionDepartement || '—' }}</p></ng-template>
+              </div>
+              <div class="detail-item">
+                <label>Fonction</label>
+                <ng-container *ngIf="selectedItem._status==='pending'; else xFonc"><input class="edit-input" [(ngModel)]="selectedItem.fonction" /></ng-container>
+                <ng-template #xFonc><p>{{ selectedItem.fonction || '—' }}</p></ng-template>
+              </div>
+              <div class="detail-item">
+                <label>Encadreur Opalia</label>
+                <ng-container *ngIf="selectedItem._status==='pending'; else xEnc"><input class="edit-input" [(ngModel)]="selectedItem.encadreurOpalia" /></ng-container>
+                <ng-template #xEnc><p>{{ selectedItem.encadreurOpalia || '—' }}</p></ng-template>
+              </div>
+              <div class="detail-item">
+                <label>Prénom</label>
+                <ng-container *ngIf="selectedItem._status==='pending'; else xPre"><input class="edit-input" [(ngModel)]="selectedItem.prenom" /></ng-container>
+                <ng-template #xPre><p>{{ selectedItem.prenom || '—' }}</p></ng-template>
+              </div>
+              <div class="detail-item">
+                <label>Nom</label>
+                <ng-container *ngIf="selectedItem._status==='pending'; else xNom"><input class="edit-input" [(ngModel)]="selectedItem.nom" /></ng-container>
+                <ng-template #xNom><p>{{ selectedItem.nom || '—' }}</p></ng-template>
+              </div>
+              <div class="detail-item">
+                <label>Matricule</label>
+                <ng-container *ngIf="selectedItem._status==='pending'; else xMat"><input class="edit-input" [(ngModel)]="selectedItem.matricule" /></ng-container>
+                <ng-template #xMat><p>{{ selectedItem.matricule || '—' }}</p></ng-template>
+              </div>
+              <div class="detail-item">
+                <label>Téléphone</label>
+                <ng-container *ngIf="selectedItem._status==='pending'; else xTel"><input class="edit-input" [(ngModel)]="selectedItem.tel" /></ng-container>
+                <ng-template #xTel><p>{{ selectedItem.tel || '—' }}</p></ng-template>
+              </div>
             </div>
           </div>
 
           <div class="detail-section">
             <h3>Détail de la demande</h3>
             <div class="detail-grid">
-              <div class="detail-item"><label>N° ticket</label><p>{{ selected.numeroTicket || '—' }}</p></div>
-              <div class="detail-item"><label>Raison d'autorisation</label><p>{{ selected.raisonAutorisation || '—' }}</p></div>
+              <div class="detail-item">
+                <label>N° ticket</label>
+                <ng-container *ngIf="selectedItem._status==='pending'; else xTkt"><input class="edit-input" [(ngModel)]="selectedItem.numeroTicket" /></ng-container>
+                <ng-template #xTkt><p>{{ selectedItem.numeroTicket || '—' }}</p></ng-template>
+              </div>
+              <div class="detail-item">
+                <label>Raison d'autorisation</label>
+                <ng-container *ngIf="selectedItem._status==='pending'; else xRsn">
+                  <textarea class="edit-textarea" [(ngModel)]="selectedItem.raisonAutorisation"></textarea>
+                </ng-container>
+                <ng-template #xRsn><p>{{ selectedItem.raisonAutorisation || '—' }}</p></ng-template>
+              </div>
             </div>
           </div>
 
           <div class="detail-section">
             <h3>Matériels à autoriser</h3>
             <div class="detail-grid">
-              <div class="detail-item"><label>Clé USB</label><p>{{ yesNo(selected.cleUsb) }}</p></div>
-              <div class="detail-item"><label>Disque dur externe</label><p>{{ yesNo(selected.disqueDurExterne) }}</p></div>
-              <div class="detail-item"><label>Clé 4G</label><p>{{ yesNo(selected.cle4G) }}</p></div>
-              <div class="detail-item"><label>Lecteur DVD</label><p>{{ yesNo(selected.lecteurDvd) }}</p></div>
-              <div class="detail-item"><label>Ordinateur personnel</label><p>{{ yesNo(selected.ordinateurPersonale) }}</p></div>
+              <div class="detail-item">
+                <label>Clé USB</label>
+                <ng-container *ngIf="selectedItem._status==='pending'; else xCusb">
+                  <label class="edit-checkbox-row"><input type="checkbox" [(ngModel)]="selectedItem.cleUsb" /> Clé USB</label>
+                </ng-container>
+                <ng-template #xCusb><p>{{ yesNo(selectedItem.cleUsb) }}</p></ng-template>
+              </div>
+              <div class="detail-item">
+                <label>Disque dur externe</label>
+                <ng-container *ngIf="selectedItem._status==='pending'; else xDdx">
+                  <label class="edit-checkbox-row"><input type="checkbox" [(ngModel)]="selectedItem.disqueDurExterne" /> Disque dur externe</label>
+                </ng-container>
+                <ng-template #xDdx><p>{{ yesNo(selectedItem.disqueDurExterne) }}</p></ng-template>
+              </div>
+              <div class="detail-item">
+                <label>Clé 4G</label>
+                <ng-container *ngIf="selectedItem._status==='pending'; else xC4g">
+                  <label class="edit-checkbox-row"><input type="checkbox" [(ngModel)]="selectedItem.cle4G" /> Clé 4G</label>
+                </ng-container>
+                <ng-template #xC4g><p>{{ yesNo(selectedItem.cle4G) }}</p></ng-template>
+              </div>
+              <div class="detail-item">
+                <label>Lecteur DVD</label>
+                <ng-container *ngIf="selectedItem._status==='pending'; else xLdvd">
+                  <label class="edit-checkbox-row"><input type="checkbox" [(ngModel)]="selectedItem.lecteurDvd" /> Lecteur DVD</label>
+                </ng-container>
+                <ng-template #xLdvd><p>{{ yesNo(selectedItem.lecteurDvd) }}</p></ng-template>
+              </div>
+              <div class="detail-item">
+                <label>Ordinateur personnel</label>
+                <ng-container *ngIf="selectedItem._status==='pending'; else xOp">
+                  <label class="edit-checkbox-row"><input type="checkbox" [(ngModel)]="selectedItem.ordinateurPersonale" /> Ordinateur personnel</label>
+                </ng-container>
+                <ng-template #xOp><p>{{ yesNo(selectedItem.ordinateurPersonale) }}</p></ng-template>
+              </div>
             </div>
           </div>
 
-          <div class="detail-section" *ngIf="selected.attachedFile">
+          <div class="detail-section" *ngIf="selectedItem.attachedFile || selectedItem._status === 'pending'">
             <h3>Document joint</h3>
-            <button class="attached-file-btn" (click)="openAttachedFile(selected)">
+            <button class="attached-file-btn" (click)="openAttachedFile(selectedItem, $event)">
               📎 Ouvrir le document d'origine
             </button>
           </div>
@@ -148,7 +272,7 @@
             <div class="detail-grid">
               <div class="detail-item">
                 <label>Créé le</label>
-                <p>{{ selected.createdAt | date:'dd/MM/yyyy HH:mm' }}</p>
+                <p>{{ selectedItem.createdAt | date:'dd/MM/yyyy HH:mm' }}</p>
               </div>
             </div>
           </div>
@@ -156,6 +280,25 @@
         </div>
 
         <div class="modal-footer">
+          <span *ngIf="saveFeedback"
+                class="save-feedback"
+                [class.ok]="saveFeedback.type==='ok'"
+                [class.error]="saveFeedback.type==='error'">
+            {{ saveFeedback.text }}
+          </span>
+          <ng-container *ngIf="selectedItem._status === 'pending'">
+            <button class="btn-modal-save"
+                    [disabled]="saveBusy"
+                    (click)="saveEdits()">
+              {{ saveBusy ? '⏳ …' : '💾 Enregistrer' }}
+            </button>
+            <button class="btn-modal-reject"
+                    [disabled]="actionBusyId===selectedItem._pendingId"
+                    (click)="rejectRow(selectedItem); closeDetail()">Rejeter</button>
+            <button class="btn-modal-confirm"
+                    [disabled]="actionBusyId===selectedItem._pendingId"
+                    (click)="confirmRow(selectedItem); closeDetail()">Confirmer</button>
+          </ng-container>
           <button class="close-modal-btn" (click)="closeDetail()">Fermer</button>
         </div>
 

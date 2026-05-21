@@ -10,11 +10,11 @@
         <p>Fiches employés extraites automatiquement par IA</p>
       </div>
       <div class="header-count" *ngIf="!isLoading">
-        👥 {{ employees.length }} employé(s)
+        👥 {{ items.length }} fiche(s)
       </div>
     </div>
 
-    <!-- Search -->
+    <!-- Filters -->
     <div class="filters-bar">
       <div class="search-wrapper">
         <span class="search-icon">🔍</span>
@@ -26,85 +26,104 @@
           class="search-input"
         />
       </div>
-      <div class="results-count">
-        {{ filteredEmployees.length }} résultat(s)
+      <div class="status-tabs">
+        <button class="status-tab" [class.active]="statusFilter==='all'" (click)="setStatusFilter('all')">
+          Tous <span class="badge">{{ countByStatus('all') }}</span>
+        </button>
+        <button class="status-tab" [class.active]="statusFilter==='pending'" (click)="setStatusFilter('pending')">
+          En attente <span class="badge pending">{{ countByStatus('pending') }}</span>
+        </button>
+        <button class="status-tab" [class.active]="statusFilter==='confirmed'" (click)="setStatusFilter('confirmed')">
+          Confirmé <span class="badge confirmed">{{ countByStatus('confirmed') }}</span>
+        </button>
       </div>
     </div>
 
     <!-- Loading -->
     <div class="loading-state" *ngIf="isLoading">
       <div class="loader"></div>
-      <p>Chargement des employés...</p>
+      <p>Chargement des fiches…</p>
     </div>
 
     <!-- Empty -->
-    <div class="empty-state" *ngIf="!isLoading && filteredEmployees.length === 0">
+    <div class="empty-state" *ngIf="!isLoading && filteredItems.length === 0">
       <div class="empty-icon">👥</div>
-      <h3>Aucun employé trouvé</h3>
-      <p>Les fiches employés sont créées automatiquement lors du scan</p>
+      <h3>Aucune fiche trouvée</h3>
+      <p>Les fiches sont créées automatiquement lors du scan</p>
       <a routerLink="/scan" class="empty-btn">📤 Scanner un document</a>
     </div>
 
-    <!-- Cards Grid -->
-    <div class="employees-grid" *ngIf="!isLoading && filteredEmployees.length > 0">
-      <div
-        class="employee-card"
-        *ngFor="let emp of filteredEmployees"
-        (click)="openDetail(emp)">
-
-        <div class="card-top">
-          <div class="emp-avatar"
-            [style.background]="getAvatarColor(emp.name)">
-            {{ getInitials(emp.name) }}
-          </div>
-          <div class="emp-info">
-            <h3>{{ emp.name || '—' }}</h3>
-            <p class="emp-position">{{ emp.kindOfUpdate || '—' }}</p>
-          </div>
-        </div>
-
-        <div class="card-details">
-          <div class="card-detail-item">
-            <span class="detail-icon">🏢</span>
-            <span>{{ emp.company || '—' }}</span>
-          </div>
-          <div class="card-detail-item">
-            <span class="detail-icon">🗂️</span>
-            <span>{{ emp.department || '—' }}</span>
-          </div>
-          <div class="card-detail-item" *ngIf="emp.site">
-            <span class="detail-icon">📍</span>
-            <span>{{ emp.site }}</span>
-          </div>
-          <div class="card-detail-item" *ngIf="emp.mobile">
-            <span class="detail-icon">📱</span>
-            <span>{{ emp.mobile }}</span>
-          </div>
-        </div>
-
-        <div class="card-footer-row">
-          <span class="view-detail">Voir détails →</span>
-          <span class="card-date" *ngIf="emp.createdAt">
-            {{ emp.createdAt | date:'dd/MM/yyyy' }}
-          </span>
-        </div>
-
-      </div>
+    <!-- Table -->
+    <div class="data-table-wrapper" *ngIf="!isLoading && filteredItems.length > 0">
+      <table class="data-table">
+        <thead>
+        <tr>
+          <th>Nom</th>
+          <th>Société</th>
+          <th>Département</th>
+          <th>Site</th>
+          <th>Type de demande</th>
+          <th>Date</th>
+          <th>Statut</th>
+          <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr *ngFor="let row of filteredItems"
+            (click)="openDetail(row)"
+            class="row-clickable">
+          <td>
+            <div class="cell-name">
+              <div class="emp-avatar small"
+                   [style.background]="getAvatarColor(row.name)">
+                {{ getInitials(row.name) }}
+              </div>
+              <span>{{ row.name || '—' }}</span>
+            </div>
+          </td>
+          <td>{{ row.company || '—' }}</td>
+          <td>{{ row.department || '—' }}</td>
+          <td>{{ row.site || '—' }}</td>
+          <td>{{ row.kindOfUpdate || '—' }}</td>
+          <td>{{ row.createdAt | date:'dd/MM/yyyy' }}</td>
+          <td>
+              <span class="status-badge"
+                    [class.pending]="row._status==='pending'"
+                    [class.confirmed]="row._status==='confirmed'">
+                {{ row._status === 'pending' ? '⏳ En attente' : '✓ Confirmé' }}
+              </span>
+          </td>
+          <td>
+            <div class="row-actions" *ngIf="row._status === 'pending'">
+              <button class="btn-action confirm"
+                      title="Confirmer"
+                      [disabled]="actionBusyId===row._pendingId"
+                      (click)="confirmRow(row, $event)">✓</button>
+              <button class="btn-action reject"
+                      title="Rejeter"
+                      [disabled]="actionBusyId===row._pendingId"
+                      (click)="rejectRow(row, $event)">✕</button>
+            </div>
+            <span *ngIf="row._status === 'confirmed'" class="muted">—</span>
+          </td>
+        </tr>
+        </tbody>
+      </table>
     </div>
 
     <!-- Detail Modal -->
-    <div class="modal-overlay" *ngIf="selectedEmployee" (click)="closeDetail()">
+    <div class="modal-overlay" *ngIf="selectedItem" (click)="closeDetail()">
       <div class="modal-card" (click)="$event.stopPropagation()">
 
         <div class="modal-header">
           <div class="modal-emp-header">
             <div class="modal-avatar"
-              [style.background]="getAvatarColor(selectedEmployee.name)">
-              {{ getInitials(selectedEmployee.name) }}
+                 [style.background]="getAvatarColor(selectedItem.name)">
+              {{ getInitials(selectedItem.name) }}
             </div>
             <div>
-              <h2>{{ selectedEmployee.name || '—' }}</h2>
-              <p>{{ selectedEmployee.kindOfUpdate || '—' }}</p>
+              <h2>{{ selectedItem.name || '—' }}</h2>
+              <p>{{ selectedItem.kindOfUpdate || '—' }}</p>
             </div>
           </div>
           <button class="close-btn" (click)="closeDetail()">✕</button>
@@ -113,23 +132,54 @@
         <div class="modal-body">
 
           <div class="detail-section">
+            <h3>Statut</h3>
+            <span class="status-badge"
+                  [class.pending]="selectedItem._status==='pending'"
+                  [class.confirmed]="selectedItem._status==='confirmed'">
+              {{ selectedItem._status === 'pending' ? '⏳ En attente de validation' : '✓ Confirmé' }}
+            </span>
+          </div>
+
+          <div class="detail-section">
             <h3>Informations Employé</h3>
             <div class="detail-grid">
               <div class="detail-item">
+                <label>Nom</label>
+                <ng-container *ngIf="selectedItem._status==='pending'; else nameRead">
+                  <input class="edit-input" [(ngModel)]="selectedItem.name" />
+                </ng-container>
+                <ng-template #nameRead><p>{{ selectedItem.name || '—' }}</p></ng-template>
+              </div>
+              <div class="detail-item">
                 <label>Société</label>
-                <p>{{ selectedEmployee.company || '—' }}</p>
+                <ng-container *ngIf="selectedItem._status==='pending'; else companyRead">
+                  <input class="edit-input" [(ngModel)]="selectedItem.company" />
+                </ng-container>
+                <ng-template #companyRead><p>{{ selectedItem.company || '—' }}</p></ng-template>
               </div>
               <div class="detail-item">
                 <label>Site</label>
-                <p>{{ selectedEmployee.site || '—' }}</p>
+                <ng-container *ngIf="selectedItem._status==='pending'; else siteRead">
+                  <input class="edit-input" [(ngModel)]="selectedItem.site" />
+                </ng-container>
+                <ng-template #siteRead><p>{{ selectedItem.site || '—' }}</p></ng-template>
               </div>
               <div class="detail-item">
                 <label>Département</label>
-                <p>{{ selectedEmployee.department || '—' }}</p>
+                <ng-container *ngIf="selectedItem._status==='pending'; else deptRead">
+                  <input class="edit-input" [(ngModel)]="selectedItem.department" />
+                </ng-container>
+                <ng-template #deptRead><p>{{ selectedItem.department || '—' }}</p></ng-template>
               </div>
               <div class="detail-item">
                 <label>Type de demande</label>
-                <p>{{ selectedEmployee.kindOfUpdate || '—' }}</p>
+                <ng-container *ngIf="selectedItem._status==='pending'; else kindRead">
+                  <select class="edit-select" [(ngModel)]="selectedItem.kindOfUpdate">
+                    <option value="">—</option>
+                    <option *ngFor="let opt of kindOfUpdateOptions" [value]="opt">{{ opt }}</option>
+                  </select>
+                </ng-container>
+                <ng-template #kindRead><p>{{ selectedItem.kindOfUpdate || '—' }}</p></ng-template>
               </div>
             </div>
           </div>
@@ -139,11 +189,17 @@
             <div class="detail-grid">
               <div class="detail-item">
                 <label>Mobile</label>
-                <p>{{ selectedEmployee.mobile || '—' }}</p>
+                <ng-container *ngIf="selectedItem._status==='pending'; else mobileRead">
+                  <input class="edit-input" [(ngModel)]="selectedItem.mobile" />
+                </ng-container>
+                <ng-template #mobileRead><p>{{ selectedItem.mobile || '—' }}</p></ng-template>
               </div>
               <div class="detail-item">
                 <label>Téléphone bureau</label>
-                <p>{{ selectedEmployee.officePhone || '—' }}</p>
+                <ng-container *ngIf="selectedItem._status==='pending'; else phoneRead">
+                  <input class="edit-input" [(ngModel)]="selectedItem.officePhone" />
+                </ng-container>
+                <ng-template #phoneRead><p>{{ selectedItem.officePhone || '—' }}</p></ng-template>
               </div>
             </div>
           </div>
@@ -153,18 +209,24 @@
             <div class="detail-grid">
               <div class="detail-item">
                 <label>Requester</label>
-                <p>{{ selectedEmployee.requester || '—' }}</p>
+                <ng-container *ngIf="selectedItem._status==='pending'; else reqRead">
+                  <input class="edit-input" [(ngModel)]="selectedItem.requester" />
+                </ng-container>
+                <ng-template #reqRead><p>{{ selectedItem.requester || '—' }}</p></ng-template>
               </div>
               <div class="detail-item">
                 <label>Job Role du demandeur</label>
-                <p>{{ selectedEmployee.requesterJobRole || '—' }}</p>
+                <ng-container *ngIf="selectedItem._status==='pending'; else jobRead">
+                  <input class="edit-input" [(ngModel)]="selectedItem.requesterJobRole" />
+                </ng-container>
+                <ng-template #jobRead><p>{{ selectedItem.requesterJobRole || '—' }}</p></ng-template>
               </div>
             </div>
           </div>
 
-          <div class="detail-section" *ngIf="selectedEmployee.attachedFile">
+          <div class="detail-section" *ngIf="selectedItem.attachedFile || selectedItem._status === 'pending'">
             <h3>Document joint</h3>
-            <button class="attached-file-btn" (click)="openAttachedFile(selectedEmployee)">
+            <button class="attached-file-btn" (click)="openAttachedFile(selectedItem, $event)">
               📎 Ouvrir le document d'origine
             </button>
           </div>
@@ -174,11 +236,11 @@
             <div class="detail-grid">
               <div class="detail-item">
                 <label>Document source</label>
-                <p>{{ selectedEmployee.sourceDocumentId || '—' }}</p>
+                <p>{{ selectedItem.sourceDocumentId || '—' }}</p>
               </div>
               <div class="detail-item">
                 <label>Créé le</label>
-                <p>{{ selectedEmployee.createdAt | date:'dd/MM/yyyy HH:mm' }}</p>
+                <p>{{ selectedItem.createdAt | date:'dd/MM/yyyy HH:mm' }}</p>
               </div>
             </div>
           </div>
@@ -186,6 +248,25 @@
         </div>
 
         <div class="modal-footer">
+          <span *ngIf="saveFeedback"
+                class="save-feedback"
+                [class.ok]="saveFeedback.type==='ok'"
+                [class.error]="saveFeedback.type==='error'">
+            {{ saveFeedback.text }}
+          </span>
+          <ng-container *ngIf="selectedItem._status === 'pending'">
+            <button class="btn-modal-save"
+                    [disabled]="saveBusy"
+                    (click)="saveEdits()">
+              {{ saveBusy ? '⏳ …' : '💾 Enregistrer' }}
+            </button>
+            <button class="btn-modal-reject"
+                    [disabled]="actionBusyId===selectedItem._pendingId"
+                    (click)="rejectRow(selectedItem); closeDetail()">Rejeter</button>
+            <button class="btn-modal-confirm"
+                    [disabled]="actionBusyId===selectedItem._pendingId"
+                    (click)="confirmRow(selectedItem); closeDetail()">Confirmer</button>
+          </ng-container>
           <button class="close-modal-btn" (click)="closeDetail()">Fermer</button>
         </div>
 

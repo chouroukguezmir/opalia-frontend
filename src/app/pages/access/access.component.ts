@@ -2,8 +2,11 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { forkJoin } from 'rxjs';
 import { SidebarComponent } from '../../layout/sidebar/sidebar.component';
 import { ApiService } from '../../services/api.service';
+
+type RowStatus = 'pending' | 'confirmed';
 
 @Component({
   selector: 'app-access',
@@ -15,45 +18,143 @@ import { ApiService } from '../../services/api.service';
 export class AccessComponent implements OnInit {
 
   items: any[] = [];
-  filtered: any[] = [];
+  filteredItems: any[] = [];
   isLoading = true;
   searchQuery = '';
-  selected: any = null;
+  statusFilter: 'all' | RowStatus = 'all';
+  selectedItem: any = null;
+  actionBusyId: string | null = null;
+  saveBusy = false;
+  saveFeedback: { type: 'ok' | 'error'; text: string } | null = null;
+
+  classificationOptions = ['Confidentiel', 'Non confidentiel'];
+
+  private editableTextFields = [
+    'societe', 'site', 'direction', 'fonction', 'prenom', 'nom',
+    'matricule', 'tel', 'classification'
+  ];
 
   constructor(private apiService: ApiService) {}
 
-  ngOnInit(): void { this.load(); }
+  ngOnInit(): void { this.loadAll(); }
 
-  load(): void {
+  loadAll(): void {
     this.isLoading = true;
-    this.apiService.getAllAccessRequests().subscribe({
-      next: (data: any[]) => {
-        this.items    = data;
-        this.filtered = data;
+    forkJoin({
+      confirmed: this.apiService.getAllAccessRequests(),
+      pending:   this.apiService.getPendingDocuments(),
+    }).subscribe({
+      next: ({ confirmed, pending }) => {
+        const confirmedRows = (confirmed || []).map((x: any) => ({
+          ...x,
+          _status: 'confirmed' as RowStatus,
+        }));
+        const pendingRows = (pending || [])
+          .filter((p: any) => p.documentType === 'TYPE_A')
+          .map((p: any) => ({
+            id: p.id,
+            ...(p.extractedFields || {}),
+            attachedFile: p.originalFilePath,
+            createdAt: p.scannedAt,
+            _status: 'pending' as RowStatus,
+            _pendingId: p.id,
+          }));
+        this.items = [...pendingRows, ...confirmedRows];
+        this.applyFilters();
         this.isLoading = false;
       },
       error: () => { this.isLoading = false; }
     });
   }
 
-  onSearch(): void {
-    const q = this.searchQuery.toLowerCase().trim();
-    if (!q) { this.filtered = [...this.items]; return; }
-    this.filtered = this.items.filter(x =>
-      x.prenom?.toLowerCase().includes(q) ||
-      x.nom?.toLowerCase().includes(q) ||
-      x.matricule?.toLowerCase().includes(q) ||
-      x.societe?.toLowerCase().includes(q) ||
-      x.direction?.toLowerCase().includes(q) ||
-      x.classification?.toLowerCase().includes(q)
-    );
+  setStatusFilter(s: 'all' | RowStatus): void {
+    this.statusFilter = s;
+    this.applyFilters();
   }
 
-  openDetail(x: any): void { this.selected = x; }
-  closeDetail(): void { this.selected = null; }
+  onSearch(): void { this.applyFilters(); }
 
-  openAttachedFile(x: any): void {
-    this.apiService.getAccessRequestFile(x.id).subscribe({
+  applyFilters(): void {
+    const q = this.searchQuery.toLowerCase().trim();
+    this.filteredItems = this.items.filter(x => {
+      if (this.statusFilter !== 'all' && x._status !== this.statusFilter) return false;
+      if (!q) return true;
+      return (
+        x.prenom?.toLowerCase().includes(q) ||
+        x.nom?.toLowerCase().includes(q) ||
+        x.matricule?.toLowerCase().includes(q) ||
+        x.societe?.toLowerCase().includes(q) ||
+        x.direction?.toLowerCase().includes(q) ||
+        x.classification?.toLowerCase().includes(q)
+      );
+    });
+  }
+
+  countByStatus(s: 'all' | RowStatus): number {
+    if (s === 'all') return this.items.length;
+    return this.items.filter(i => i._status === s).length;
+  }
+
+  openDetail(row: any): void {
+    this.selectedItem = row;
+    this.saveFeedback = null;
+  }
+  closeDetail(): void {
+    this.selectedItem = null;
+    this.saveFeedback = null;
+  }
+
+  saveEdits(): void {
+    if (!this.selectedItem?._pendingId) return;
+    const payload: { [k: string]: string } = {};
+    for (const f of this.editableTextFields) {
+      const v = this.selectedItem[f];
+      payload[f] = v == null ? '' : String(v);
+    }
+    this.saveBusy = true;
+    this.saveFeedback = null;
+    this.apiService.updatePendingFields(this.selectedItem._pendingId, payload).subscribe({
+      next: () => {
+        this.saveBusy = false;
+        this.saveFeedback = { type: 'ok', text: '✓ Modifications enregistrées' };
+        const idx = this.items.findIndex(i => i._pendingId === this.selectedItem._pendingId);
+        if (idx >= 0) this.items[idx] = { ...this.selectedItem };
+        this.applyFilters();
+      },
+      error: () => {
+        this.saveBusy = false;
+        this.saveFeedback = { type: 'error', text: '✕ Erreur lors de l\'enregistrement' };
+      }
+    });
+  }
+
+  confirmRow(row: any, e?: Event): void {
+    e?.stopPropagation();
+    if (!row._pendingId) return;
+    this.actionBusyId = row._pendingId;
+    this.apiService.confirmDocument(row._pendingId).subscribe({
+      next: () => { this.actionBusyId = null; this.loadAll(); },
+      error: () => { this.actionBusyId = null; alert('Erreur lors de la confirmation'); }
+    });
+  }
+
+  rejectRow(row: any, e?: Event): void {
+    e?.stopPropagation();
+    if (!row._pendingId) return;
+    if (!confirm('Rejeter ce document ?')) return;
+    this.actionBusyId = row._pendingId;
+    this.apiService.rejectDocument(row._pendingId).subscribe({
+      next: () => { this.actionBusyId = null; this.loadAll(); },
+      error: () => { this.actionBusyId = null; alert('Erreur lors du rejet'); }
+    });
+  }
+
+  openAttachedFile(row: any, e?: Event): void {
+    e?.stopPropagation();
+    const obs = row._status === 'pending'
+      ? this.apiService.getPendingFile(row._pendingId)
+      : this.apiService.getAccessRequestFile(row.id);
+    obs.subscribe({
       next: (blob) => window.open(URL.createObjectURL(blob), '_blank'),
       error: () => alert('Document joint introuvable')
     });

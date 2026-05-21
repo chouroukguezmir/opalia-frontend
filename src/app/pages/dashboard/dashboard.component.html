@@ -9,177 +9,99 @@
         <h1>Tableau de Bord</h1>
         <p>Bienvenue — {{ today | date:'EEEE d MMMM yyyy' }}</p>
       </div>
-      <div class="header-badge">
+      <div class="header-badge" *ngIf="!isLoading">
         <span class="live-dot"></span>
-        Temps réel
+        {{ stats.todayScanned }} scanné(s) aujourd'hui
       </div>
     </div>
 
     <!-- Loading -->
     <div class="loading-state" *ngIf="isLoading">
       <div class="loader"></div>
-      <p>Chargement des statistiques...</p>
+      <p>Chargement…</p>
     </div>
 
-    <!-- Stats Cards -->
-    <div class="stats-grid" *ngIf="!isLoading">
+    <ng-container *ngIf="!isLoading">
 
-      <div class="stat-card primary">
-        <div class="stat-icon">📄</div>
-        <div class="stat-info">
-          <h3>{{ stats.scannedTotal }}</h3>
-          <p>Documents Scannés</p>
-        </div>
-        <div class="stat-trend">Total</div>
-      </div>
-
-      <div class="stat-card success">
-        <div class="stat-icon">✅</div>
-        <div class="stat-info">
-          <h3>{{ stats.analyzedTotal }}</h3>
-          <p>Documents Analysés</p>
-        </div>
-        <div class="stat-trend">{{ getSuccessRate() }}% succès</div>
-      </div>
-
-      <div class="stat-card warning">
-        <div class="stat-icon">✍️</div>
-        <div class="stat-info">
-          <h3>{{ stats.handwritten }}</h3>
-          <p>Manuscrits Détectés</p>
-        </div>
-        <div class="stat-trend">OCR</div>
-      </div>
-
-      <div class="stat-card info">
-        <div class="stat-icon">📑</div>
-        <div class="stat-info">
-          <h3>{{ stats.pdfsGenerated }}</h3>
-          <p>PDFs Générés</p>
-        </div>
-        <div class="stat-trend">Numérisés</div>
-      </div>
-
-    </div>
-
-    <!-- Second Row -->
-    <div class="second-row" *ngIf="!isLoading">
-
-      <!-- Types breakdown -->
-      <div class="card">
-        <div class="card-title">
-          <span>📊</span> Répartition par Type
-        </div>
-        <div class="type-list">
-
-          <div class="type-item">
-            <div class="type-label">
-              <span class="type-dot employee"></span>
-              Employés (E DSI 3812)
-            </div>
-            <div class="type-right">
-              <div class="type-bar-track">
-                <div class="type-bar employee"
-                  [style.width.%]="stats.scannedTotal > 0 ?
-                  (stats.scannedEmployee / stats.scannedTotal * 100) : 0">
-                </div>
-              </div>
-              <span class="type-count">{{ stats.scannedEmployee }}</span>
-            </div>
+      <!-- Hero KPIs -->
+      <div class="kpi-row">
+        <div class="kpi-card total">
+          <div class="kpi-icon">📄</div>
+          <div class="kpi-body">
+            <div class="kpi-value">{{ stats.totals.all }}</div>
+            <div class="kpi-label">Documents au total</div>
           </div>
+        </div>
 
-          <div class="type-item">
-            <div class="type-label">
-              <span class="type-dot type-a"></span>
-              Droits Accès (E DSI 3813)
-            </div>
-            <div class="type-right">
-              <div class="type-bar-track">
-                <div class="type-bar type-a"
-                  [style.width.%]="stats.scannedTotal > 0 ?
-                  ((stats.bySubType?.['TYPE_A'] || 0) / stats.scannedTotal * 100) : 0">
-                </div>
-              </div>
-              <span class="type-count">{{ stats.bySubType?.['TYPE_A'] || 0 }}</span>
-            </div>
+        <a routerLink="/employees" class="kpi-card pending">
+          <div class="kpi-icon">⏳</div>
+          <div class="kpi-body">
+            <div class="kpi-value">{{ stats.totals.pending }}</div>
+            <div class="kpi-label">En attente de validation</div>
           </div>
+          <div class="kpi-cta" *ngIf="stats.totals.pending > 0">À traiter →</div>
+        </a>
 
-          <div class="type-item">
-            <div class="type-label">
-              <span class="type-dot type-b"></span>
-              Matériels (E DSI 3328)
-            </div>
-            <div class="type-right">
-              <div class="type-bar-track">
-                <div class="type-bar type-b"
-                  [style.width.%]="stats.scannedTotal > 0 ?
-                  ((stats.bySubType?.['TYPE_B'] || 0) / stats.scannedTotal * 100) : 0">
-                </div>
-              </div>
-              <span class="type-count">{{ stats.bySubType?.['TYPE_B'] || 0 }}</span>
-            </div>
+        <div class="kpi-card confirmed">
+          <div class="kpi-icon">✓</div>
+          <div class="kpi-body">
+            <div class="kpi-value">{{ stats.totals.confirmed }}</div>
+            <div class="kpi-label">Confirmés ({{ confirmedRate() }}%)</div>
           </div>
-
-          <div class="type-item">
-            <div class="type-label">
-              <span class="type-dot type-c"></span>
-              Matériel Externe (E DSI 3797)
-            </div>
-            <div class="type-right">
-              <div class="type-bar-track">
-                <div class="type-bar type-c"
-                  [style.width.%]="stats.scannedTotal > 0 ?
-                  ((stats.bySubType?.['TYPE_C'] || 0) / stats.scannedTotal * 100) : 0">
-                </div>
-              </div>
-              <span class="type-count">{{ stats.bySubType?.['TYPE_C'] || 0 }}</span>
-            </div>
-          </div>
-
         </div>
       </div>
 
-      <!-- Quick Actions -->
-      <div class="card">
-        <div class="card-title">
-          <span>⚡</span> Actions Rapides
-        </div>
-        <div class="quick-actions">
-          <a routerLink="/scan" class="action-btn primary-action">
-            <span>📤</span>
-            <div>
-              <p>Scanner un Document</p>
-              <small>Upload et analyse automatique</small>
-            </div>
-          </a>
-          <a routerLink="/documents" class="action-btn">
-            <span>📁</span>
-            <div>
-              <p>Voir les Documents</p>
-              <small>{{ stats.analyzedTotal }} documents analysés</small>
-            </div>
-          </a>
-          <a routerLink="/employees" class="action-btn">
-            <span>👥</span>
-            <div>
-              <p>Gérer les Employés</p>
-              <small>{{ stats.scannedEmployee }} fiches employés</small>
-            </div>
-          </a>
-        </div>
+      <!-- Entity breakdown -->
+      <div class="section-title">Répartition par type</div>
+      <div class="entity-grid">
+        <a *ngFor="let c of entityCards"
+           [routerLink]="c.route"
+           class="entity-card"
+           [style.--accent]="c.accent">
+          <div class="entity-top">
+            <div class="entity-icon">{{ c.icon }}</div>
+            <div class="entity-label">{{ c.label }}</div>
+          </div>
+          <div class="entity-total">{{ bucket(c.key).total }}</div>
+          <div class="entity-split">
+            <span class="split-pending" *ngIf="bucket(c.key).pending > 0">
+              ⏳ {{ bucket(c.key).pending }} en attente
+            </span>
+            <span class="split-confirmed">
+              ✓ {{ bucket(c.key).confirmed }} confirmés
+            </span>
+          </div>
+        </a>
       </div>
 
-    </div>
+      <!-- Quick actions -->
+      <div class="section-title">Actions rapides</div>
+      <div class="actions-row">
+        <a routerLink="/scan" class="action-card primary">
+          <div class="action-icon">📤</div>
+          <div>
+            <div class="action-title">Scanner un document</div>
+            <small>Upload et analyse automatique par IA</small>
+          </div>
+        </a>
+        <a routerLink="/employees" class="action-card" *ngIf="stats.totals.pending > 0">
+          <div class="action-icon">⏳</div>
+          <div>
+            <div class="action-title">Valider les documents en attente</div>
+            <small>{{ stats.totals.pending }} document(s) à confirmer</small>
+          </div>
+        </a>
+      </div>
 
-    <!-- Empty State -->
-    <div class="empty-state" *ngIf="!isLoading && stats.scannedTotal === 0">
-      <div class="empty-icon">📭</div>
-      <h3>Aucun document scanné</h3>
-      <p>Commencez par scanner votre premier document</p>
-      <a routerLink="/scan" class="empty-btn">
-        📤 Scanner maintenant
-      </a>
-    </div>
+      <!-- Empty state -->
+      <div class="empty-state" *ngIf="stats.totals.all === 0">
+        <div class="empty-icon">📭</div>
+        <h3>Aucun document encore</h3>
+        <p>Commencez par scanner votre premier document</p>
+        <a routerLink="/scan" class="empty-btn">📤 Scanner maintenant</a>
+      </div>
+
+    </ng-container>
 
   </main>
 </div>

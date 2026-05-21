@@ -15,8 +15,6 @@ export class SidebarComponent {
 menuItems = [
   { icon: '📊', label: 'Dashboard',          route: '/dashboard' },
   { icon: '📤', label: 'Scanner',            route: '/scan'      },
-  { icon: '⏳', label: 'En attente',         route: '/pending'   },
-  { icon: '📁', label: 'Documents',          route: '/documents' },
   { icon: '👥', label: 'Employés',           route: '/employees' },
   { icon: '💻', label: 'Matériels',          route: '/materiels' },
   { icon: '🔌', label: 'Matériel externe',   route: '/materiel-externe' },

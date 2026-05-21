@@ -418,3 +418,279 @@
 .attached-file-btn:hover {
   background: #ccfbf1;
 }
+
+/* ── Status filter tabs ─────────────────────────────────── */
+.status-tabs {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.status-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.95rem;
+  border: 1.5px solid #e2e8f0;
+  background: white;
+  border-radius: 10px;
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.status-tab:hover { border-color: #0d9488; color: #0d9488; }
+
+.status-tab.active {
+  background: #0d9488;
+  color: white;
+  border-color: #0d9488;
+}
+
+.status-tab .badge {
+  border-radius: 10px;
+  font-size: 0.7rem;
+  padding: 0.1rem 0.5rem;
+  font-weight: 700;
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.status-tab.active .badge {
+  background: rgba(255,255,255,0.25);
+  color: white;
+}
+
+.status-tab:not(.active) .badge.pending   { background: #fef3c7; color: #b45309; }
+.status-tab:not(.active) .badge.confirmed { background: #dcfce7; color: #166534; }
+
+/* ── Data table ─────────────────────────────────────────── */
+.data-table-wrapper {
+  background: white;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.data-table thead { background: #f0fdfa; }
+
+.data-table th {
+  text-align: left;
+  padding: 0.85rem 1rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #0f766e;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #ccfbf1;
+  white-space: nowrap;
+}
+
+.data-table td {
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  color: #1e293b;
+  vertical-align: middle;
+}
+
+.data-table tbody tr:last-child td { border-bottom: none; }
+
+.row-clickable { cursor: pointer; transition: background 0.15s ease; }
+.row-clickable:hover { background: #f0fdfa; }
+
+.cell-name {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 600;
+}
+
+.emp-avatar.small {
+  width: 32px;
+  height: 32px;
+  font-size: 0.78rem;
+  border-radius: 9px;
+}
+
+.chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.chip {
+  display: inline-block;
+  background: #f0fdfa;
+  color: #0f766e;
+  border: 1px solid #ccfbf1;
+  padding: 0.15rem 0.55rem;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+/* ── Status badge ───────────────────────────────────────── */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 14px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.status-badge.pending   { background: #fef3c7; color: #b45309; }
+.status-badge.confirmed { background: #dcfce7; color: #166534; }
+
+/* ── Inline row actions ─────────────────────────────────── */
+.row-actions { display: flex; gap: 0.35rem; }
+
+.btn-action {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.btn-action.confirm { background: #dcfce7; color: #166534; }
+.btn-action.confirm:hover:not(:disabled) { background: #86efac; }
+.btn-action.reject  { background: #fee2e2; color: #b91c1c; }
+.btn-action.reject:hover:not(:disabled)  { background: #fca5a5; }
+.btn-action:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.muted { color: #94a3b8; font-size: 0.825rem; }
+
+/* ── Modal pending action buttons ───────────────────────── */
+.btn-modal-confirm,
+.btn-modal-reject {
+  padding: 0.625rem 1.25rem;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  margin-right: 0.5rem;
+}
+
+.btn-modal-confirm { background: #0d9488; color: white; }
+.btn-modal-confirm:hover:not(:disabled) { background: #0f766e; }
+.btn-modal-reject  { background: #fee2e2; color: #b91c1c; }
+.btn-modal-reject:hover:not(:disabled)  { background: #fca5a5; }
+.btn-modal-confirm:disabled,
+.btn-modal-reject:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Edit-mode inputs inside detail modal ───────────────── */
+.edit-input,
+.edit-select {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: #1e293b;
+  background: #fffefb;
+  outline: none;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.edit-input:focus,
+.edit-select:focus {
+  border-color: #0d9488;
+  box-shadow: 0 0 0 3px rgba(13,148,136,0.1);
+  background: white;
+}
+
+.edit-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.4rem 0.6rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: #1e293b;
+  cursor: pointer;
+  user-select: none;
+}
+
+.edit-checkbox-row input[type=checkbox] {
+  width: 16px;
+  height: 16px;
+  accent-color: #0d9488;
+  cursor: pointer;
+}
+
+.edit-textarea {
+  width: 100%;
+  min-height: 70px;
+  padding: 0.55rem 0.75rem;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: #1e293b;
+  background: #fffefb;
+  font-family: inherit;
+  resize: vertical;
+  outline: none;
+}
+
+.edit-textarea:focus {
+  border-color: #0d9488;
+  box-shadow: 0 0 0 3px rgba(13,148,136,0.1);
+  background: white;
+}
+
+.btn-modal-save {
+  padding: 0.625rem 1.25rem;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  margin-right: 0.5rem;
+  background: #0d9488;
+  color: white;
+}
+
+.btn-modal-save:hover:not(:disabled) { background: #0f766e; }
+.btn-modal-save:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.save-feedback {
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-right: auto;
+  align-self: center;
+}
+
+.save-feedback.ok    { color: #166534; }
+.save-feedback.error { color: #b91c1c; }
+
+/* ── Responsive table ───────────────────────────────────── */
+@media (max-width: 900px) {
+  .data-table th, .data-table td { padding: 0.6rem 0.6rem; font-size: 0.8rem; }
+  .filters-bar { flex-direction: column; align-items: stretch; }
+  .status-tabs { justify-content: stretch; flex-wrap: wrap; }
+  .status-tab { flex: 1; justify-content: center; }
+}
