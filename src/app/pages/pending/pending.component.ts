@@ -3,12 +3,13 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { SidebarComponent } from '../../layout/sidebar/sidebar.component';
+import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog.component';
 import { ApiService } from '../../services/api.service';
 
 @Component({
   selector: 'app-pending',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, SidebarComponent],
+  imports: [CommonModule, RouterModule, FormsModule, SidebarComponent, ConfirmDialogComponent],
   templateUrl: './pending.component.html',
   styleUrl: './pending.component.css',
 })
@@ -23,6 +24,8 @@ export class PendingComponent implements OnInit {
 
   showFilePreview = false;
   filePreviewUrl = '';
+
+  showRejectConfirm = false;
 
   actionLoading = false;
   successMessage = '';
@@ -213,9 +216,20 @@ export class PendingComponent implements OnInit {
     });
   }
 
+  /** Ouvre le dialogue de confirmation de rejet. */
   rejectDoc() {
     if (!this.selectedDoc) return;
-    if (!confirm('Êtes-vous sûr de vouloir rejeter ce document ?')) return;
+    this.showRejectConfirm = true;
+  }
+
+  cancelReject() {
+    this.showRejectConfirm = false;
+  }
+
+  /** Confirme le rejet depuis le dialogue. */
+  confirmReject() {
+    if (!this.selectedDoc) return;
+    this.showRejectConfirm = false;
     this.actionLoading = true;
     this.apiService.rejectDocument(this.selectedDoc.id).subscribe({
       next: () => {

@@ -1,0 +1,22 @@
+<div class="cd-overlay" *ngIf="open" (click)="cancel.emit()">
+  <div class="cd-card" (click)="$event.stopPropagation()">
+    <div class="cd-header">
+      <h2>{{ title }}</h2>
+      <button type="button" class="cd-close" (click)="cancel.emit()">✕</button>
+    </div>
+    <div class="cd-body">
+      <p>{{ message }}</p>
+    </div>
+    <div class="cd-footer">
+      <button type="button" class="cd-btn cd-cancel"
+              (click)="cancel.emit()" [disabled]="loading">
+        {{ cancelLabel }}
+      </button>
+      <button type="button" class="cd-btn cd-confirm"
+              [class.cd-danger]="danger"
+              (click)="confirm.emit()" [disabled]="loading">
+        {{ confirmLabel }}
+      </button>
+    </div>
+  </div>
+</div>

@@ -115,12 +115,6 @@
 .kpi-card.pending  { --kpi-color: #f59e0b; }
 .kpi-card.confirmed{ --kpi-color: #10b981; }
 
-.kpi-card.pending:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 24px rgba(245,158,11,0.18);
-  border-color: #fde68a;
-}
-
 .kpi-icon {
   font-size: 2rem;
   width: 56px;

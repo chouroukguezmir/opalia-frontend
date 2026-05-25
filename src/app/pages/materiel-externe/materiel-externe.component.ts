@@ -5,13 +5,14 @@ import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { SidebarComponent } from '../../layout/sidebar/sidebar.component';
 import { ApiService } from '../../services/api.service';
+import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog.component';
 
 type RowStatus = 'pending' | 'confirmed';
 
 @Component({
   selector: 'app-materiel-externe',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, SidebarComponent],
+  imports: [CommonModule, RouterModule, FormsModule, SidebarComponent, ConfirmDialogComponent],
   templateUrl: './materiel-externe.component.html',
   styleUrls: ['../employees/employees.component.css'],
 })
@@ -24,6 +25,9 @@ export class MaterielExterneComponent implements OnInit {
   statusFilter: 'all' | RowStatus = 'all';
   selectedItem: any = null;
   actionBusyId: string | null = null;
+
+  showRejectConfirm = false;
+  private rejectTarget: any = null;
   saveBusy = false;
   saveFeedback: { type: 'ok' | 'error'; text: string } | null = null;
 
@@ -159,10 +163,25 @@ export class MaterielExterneComponent implements OnInit {
     });
   }
 
+  /** Ouvre le dialogue de confirmation de rejet pour la ligne donnée. */
   rejectRow(row: any, e?: Event): void {
     e?.stopPropagation();
     if (!row._pendingId) return;
-    if (!confirm('Rejeter ce document ?')) return;
+    this.rejectTarget = row;
+    this.showRejectConfirm = true;
+  }
+
+  cancelReject(): void {
+    this.showRejectConfirm = false;
+    this.rejectTarget = null;
+  }
+
+  /** Confirme le rejet depuis le dialogue. */
+  confirmReject(): void {
+    const row = this.rejectTarget;
+    this.showRejectConfirm = false;
+    this.rejectTarget = null;
+    if (!row?._pendingId) return;
     this.actionBusyId = row._pendingId;
     this.apiService.rejectDocument(row._pendingId).subscribe({
       next: () => { this.actionBusyId = null; this.loadAll(); },

@@ -33,14 +33,13 @@
           </div>
         </div>
 
-        <a routerLink="/employees" class="kpi-card pending">
+        <div class="kpi-card pending">
           <div class="kpi-icon">⏳</div>
           <div class="kpi-body">
             <div class="kpi-value">{{ stats.totals.pending }}</div>
             <div class="kpi-label">En attente de validation</div>
           </div>
-          <div class="kpi-cta" *ngIf="stats.totals.pending > 0">À traiter →</div>
-        </a>
+        </div>
 
         <div class="kpi-card confirmed">
           <div class="kpi-icon">✓</div>
@@ -82,13 +81,6 @@
           <div>
             <div class="action-title">Scanner un document</div>
             <small>Upload et analyse automatique par IA</small>
-          </div>
-        </a>
-        <a routerLink="/employees" class="action-card" *ngIf="stats.totals.pending > 0">
-          <div class="action-icon">⏳</div>
-          <div>
-            <div class="action-title">Valider les documents en attente</div>
-            <small>{{ stats.totals.pending }} document(s) à confirmer</small>
           </div>
         </a>
       </div>

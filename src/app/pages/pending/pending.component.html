@@ -140,5 +140,17 @@
       </div>
     </div>
 
+    <!-- Confirmation de rejet -->
+    <app-confirm-dialog
+      [open]="showRejectConfirm"
+      title="⚠️ Rejeter le document"
+      message="Êtes-vous sûr de vouloir rejeter ce document ? Cette action est irréversible."
+      confirmLabel="✕ Rejeter"
+      [danger]="true"
+      [loading]="actionLoading"
+      (confirm)="confirmReject()"
+      (cancel)="cancelReject()">
+    </app-confirm-dialog>
+
   </main>
 </div>
