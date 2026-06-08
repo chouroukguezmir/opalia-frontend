@@ -287,14 +287,4 @@ export class PendingComponent implements OnInit {
     const m: any = { EMPLOYEE: '👤', TYPE_A: '🔐', TYPE_B: '💻', TYPE_C: '🔌' };
     return m[type] || '📄';
   }
-
-  getHwLabel(quality: string): string {
-    const m: any = { GOOD: 'Bien lisible', MEDIUM: 'Partiellement lisible', POOR: 'Difficile à lire' };
-    return m[quality] || quality;
-  }
-
-  getHwClass(quality: string): string {
-    const m: any = { GOOD: 'hw-good', MEDIUM: 'hw-medium', POOR: 'hw-poor' };
-    return m[quality] || '';
-  }
 }

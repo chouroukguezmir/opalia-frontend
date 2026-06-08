@@ -43,10 +43,9 @@
           </div>
         </div>
 
-        <!-- Badge manuscrit -->
-        <div class="hw-badge" [ngClass]="getHwClass(doc.handwritingQuality)"
-             *ngIf="doc.handwritten">
-          ✍️ Manuscrit — {{ getHwLabel(doc.handwritingQuality) }}
+        <!-- Badge manuscrit / imprimé -->
+        <div class="hw-badge" *ngIf="doc.handwritten">
+          ✍️ Document manuscrit
         </div>
         <div class="scan-badge" *ngIf="!doc.handwritten">
           🖨️ Document imprimé / numérique
